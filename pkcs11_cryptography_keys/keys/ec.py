@@ -27,7 +27,6 @@ from cryptography.hazmat.primitives.asymmetric.utils import (
 
 from pkcs11_cryptography_keys.card_token.PKCS11_token import PKCS11Token
 
-
 # Translation from mechanism read from the card to parameters needed for cryptography API
 # At init time this is used to for operations list for later use in function calls as card limitations
 _digest_algorithm_implementations: Dict[str, Dict] = {
