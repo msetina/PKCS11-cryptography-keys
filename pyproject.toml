@@ -1,0 +1,82 @@
+[build-system]
+requires = [
+    "setuptools>=67.4",
+    "wheel"
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "PKCS11-cryptography-keys"
+description = "Python chryptography keys implemented on to of PKCS11 interface"
+authors = [{name = "Miha Šetina", email = "miha.setina@gmail.com"}]
+maintainers = [{name = "Miha Šetina", email = "miha.setina@gmail.com"}]
+license = {text = "APACHE,BSD"}
+keywords = [
+    "cryptography",    
+    "pkcs11",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Information Technology",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Security :: Cryptography",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+requires-python = ">=3.10"
+dependencies = [
+    "PyKCS11>=1.5.11",
+    "cryptography>=42.0.5",
+    "asn1crypto>=1.5.1"
+]
+version = "0.0.1"
+
+[project.readme]
+file = "README.rst"
+content-type = "text/x-rst"
+
+[project.urls]
+Homepage = "https://github.com/msetina/PKCS11-cryptography-keys"
+"Source Code" = "https://github.com/msetina/PKCS11-cryptography-keys"
+"Issue Tracker" = "https://github.com/msetina/PKCS11-cryptography-keys/issues"
+
+[project.optional-dependencies]
+testing = [
+    "PKCS11-cryptography-keys",
+    "pytest>=6.1.1",
+    "pytest-cov>=4.0,<5.1",
+]
+mypy = [
+    "PKCS11-cryptography-keys",
+    "types-PyYAML",
+]
+
+[tool.setuptools]
+include-package-data = false
+license-files = ["LICENSE"]
+
+[tool.setuptools.packages.find]
+include = ["pkcs11_cryptography_keys*"]
+exclude = ["cryptography_keys_tests*"]
+
+[tool.setuptools.package-data]
+pkcs11_cryptography_keys = ["py.typed"]
+
+[tool.mypy]
+files = "pkcs11_cryptography_keys"
+
+[[tool.mypy.overrides]]
+module = ["PyKCS11.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+log_format = "%(asctime)s %(levelname)s %(message)s"
+log_date_format = "%Y-%m-%d %H:%M:%S"
+log_cli = true
+log_cli_level = "INFO"
+norecursedirs = "testdata"
+testpaths = "cryptography_keys_tests"

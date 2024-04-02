@@ -1,0 +1,141 @@
+import PyKCS11
+from cryptography import x509
+from cryptography.exceptions import UnsupportedAlgorithm
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import serialization
+
+
+# Token representation
+class PKCS11Token:
+    def __init__(self, session, keyid: bytes, key_type: int, pk_ref):
+        # session for interacton with the card
+        self._session = session
+        # id of key read from private key
+        self._keyid = keyid
+        # type of key
+        self._key_type = key_type
+        # private key reference
+        self._private_key = pk_ref
+        # operations supported by the card
+        # they are separated in method groups (DIGEST,VERIFY,SIGN,ENCRYPT,DECRYPT)
+        self._operations = {}
+
+    # API to init card allowed operations
+    def _get_mechanism_translation(self, method, PKCS11_mechanism):
+        raise NotImplemented()
+
+    # At the init time the call to fill_operations will translate method
+    # and mechanism to parameters form cryptography API calls
+    def fill_operations(self, PKCS11_mechanism, method: str) -> None:
+        mm = None
+        try:
+            if method in [
+                "DIGEST",
+                "SIGN",
+                "VERIFY",
+                "ENCRYPT",
+                "DECRYPT",
+                "DERIVE",
+            ]:
+                mm = self._get_mechanism_translation(method, PKCS11_mechanism)
+        except Exception as e:
+            pass
+        if mm:
+            for k, v in mm.items():
+                if method in self._operations:
+                    if k not in self._operations[method]:
+                        self._operations[method][k] = {}
+                    self._operations[method][k][v] = PyKCS11.CKM[
+                        PKCS11_mechanism
+                    ]
+                else:
+                    self._operations[method] = {}
+                    if k not in self._operations[method]:
+                        self._operations[method][k] = {
+                            v: PyKCS11.CKM[PKCS11_mechanism]
+                        }
+                    else:
+                        self._operations[method][k][v] = PyKCS11.CKM[
+                            PKCS11_mechanism
+                        ]
+
+    # sign data on the card using provided PK_me which is cards mechanism transalted from cryptography call
+    def _sign(self, data: bytes, PK_me):
+        if self._session is not None and self._private_key is not None:
+            if PK_me is None:
+                raise UnsupportedAlgorithm(
+                    "Signing algorithm {0} not supported.".format(PK_me)
+                )
+            else:
+                sig = self._session.sign(self._private_key, data, PK_me)
+            return sig
+        else:
+            return None
+
+    # extension to cryptography API to allow simple access to certificates written on the cards
+
+    # Certificate linked to private key on the card
+    def certificate(self):
+        if self._session is not None:
+            pk11objects = self._session.findObjects(
+                [
+                    (PyKCS11.CKA_CLASS, PyKCS11.CKO_CERTIFICATE),
+                    (PyKCS11.CKA_ID, self._keyid),
+                ]
+            )
+            all_attributes = [
+                PyKCS11.CKA_VALUE,
+            ]
+            certificate = None
+            for pk11object in pk11objects:
+                try:
+                    attributes = self._session.getAttributeValue(
+                        pk11object, all_attributes
+                    )
+                except PyKCS11.PyKCS11Error as e:
+                    continue
+
+                attr_dict = dict(list(zip(all_attributes, attributes)))
+                cert = bytes(attr_dict[PyKCS11.CKA_VALUE])
+                cert = x509.load_der_x509_certificate(
+                    cert, backend=default_backend()
+                )
+                certificate = cert.public_bytes(
+                    encoding=serialization.Encoding.PEM
+                )
+            return certificate
+
+    # A list of Certificates from the card
+    # Some cards have the CA chain written on the card
+    def certificate_with_ca_chain(self):
+        if self._session is not None:
+            pk11objects = self._session.findObjects(
+                [
+                    (PyKCS11.CKA_CLASS, PyKCS11.CKO_CERTIFICATE),
+                ]
+            )
+            ca_chain = []
+            for pk11object in pk11objects:
+                try:
+                    attributes = self._session.getAttributeValue(
+                        pk11object, [PyKCS11.CKA_VALUE]
+                    )
+                except PyKCS11.PyKCS11Error as e:
+                    continue
+
+                cert = bytes(attributes[0])
+                cert = x509.load_der_x509_certificate(
+                    cert, backend=default_backend()
+                )
+                ca_chain.append(
+                    cert.public_bytes(encoding=serialization.Encoding.PEM)
+                )
+            return b"".join(ca_chain)
+
+    # Get id and label for the Private key
+    def get_id_and_label(self):
+        if self._session is not None and self._private_key is not None:
+            attributes = self._session.getAttributeValue(
+                self._private_key, [PyKCS11.CKA_ID, PyKCS11.CKA_LABEL]
+            )
+            return attributes[0], attributes[1]

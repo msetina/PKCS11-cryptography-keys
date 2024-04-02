@@ -1,0 +1,372 @@
+# This file is dual licensed under the terms of the Apache License, Version
+# 2.0, and the BSD License. See the LICENSE file in the root of this repository
+# for complete details.
+
+import binascii
+from typing import Dict
+
+import PyKCS11
+from cryptography.exceptions import InvalidSignature, UnsupportedAlgorithm
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import _serialization, hashes
+from cryptography.hazmat.primitives._asymmetric import AsymmetricPadding
+from cryptography.hazmat.primitives.asymmetric import (
+    utils as asym_utils,
+)
+from cryptography.hazmat.primitives.asymmetric.padding import (
+    PKCS1v15,
+    OAEP,
+    PSS,
+)
+from cryptography.hazmat.primitives.asymmetric.rsa import (
+    RSAPrivateKey,
+    RSAPrivateNumbers,
+    RSAPublicKey,
+    RSAPublicNumbers,
+)
+from cryptography.hazmat.primitives.serialization import load_der_public_key
+
+from pkcs11_cryptography_keys.card_token.PKCS11_token import PKCS11Token
+
+# Translation from mechanism read from the card to parameters needed for cryptography API
+# At init time this is used to for operations list for later use in function calls as card limitations
+_digest_algorithm_implementations: Dict[str, Dict] = {
+    PyKCS11.CKM_SHA_1: {"DIGEST": {"hash": hashes.SHA1}},
+    PyKCS11.CKM_SHA224: {"DIGEST": {"hash": hashes.SHA224}},
+    PyKCS11.CKM_SHA384: {"DIGEST": {"hash": hashes.SHA384}},
+    PyKCS11.CKM_SHA256: {"DIGEST": {"hash": hashes.SHA256}},
+    PyKCS11.CKM_SHA512: {"DIGEST": {"hash": hashes.SHA512}},
+    PyKCS11.CKM_RSA_PKCS: {
+        "SIGN": {"hash": asym_utils.Prehashed, "pad": PKCS1v15},
+        "VERIFY": {"hash": asym_utils.Prehashed, "pad": PKCS1v15},
+        "ENCRYPT": {"hash": asym_utils.Prehashed, "pad": PKCS1v15},
+        "DECRYPT": {"hash": asym_utils.Prehashed, "pad": PKCS1v15},
+    },
+    PyKCS11.CKM_SHA224_RSA_PKCS: {
+        "SIGN": {"hash": hashes.SHA224, "pad": PKCS1v15},
+        "VERIFY": {"hash": hashes.SHA224, "pad": PKCS1v15},
+        "ENCRYPT": {"hash": hashes.SHA224, "pad": PKCS1v15},
+        "DECRYPT": {"hash": hashes.SHA224, "pad": PKCS1v15},
+    },
+    PyKCS11.CKM_SHA256_RSA_PKCS: {
+        "SIGN": {"hash": hashes.SHA256, "pad": PKCS1v15},
+        "VERIFY": {"hash": hashes.SHA256, "pad": PKCS1v15},
+        "ENCRYPT": {"hash": hashes.SHA256, "pad": PKCS1v15},
+        "DECRYPT": {"hash": hashes.SHA256, "pad": PKCS1v15},
+    },
+    PyKCS11.CKM_SHA384_RSA_PKCS: {
+        "SIGN": {"hash": hashes.SHA384, "pad": PKCS1v15},
+        "VERIFY": {"hash": hashes.SHA384, "pad": PKCS1v15},
+        "ENCRYPT": {"hash": hashes.SHA384, "pad": PKCS1v15},
+        "DECRYPT": {"hash": hashes.SHA384, "pad": PKCS1v15},
+    },
+    PyKCS11.CKM_SHA512_RSA_PKCS: {
+        "SIGN": {"hash": hashes.SHA512, "pad": PKCS1v15},
+        "VERIFY": {"hash": hashes.SHA512, "pad": PKCS1v15},
+        "ENCRYPT": {"hash": hashes.SHA512, "pad": PKCS1v15},
+        "DECRYPT": {"hash": hashes.SHA512, "pad": PKCS1v15},
+    },
+    PyKCS11.CKM_SHA1_RSA_PKCS: {
+        "SIGN": {"hash": hashes.SHA1, "pad": PKCS1v15},
+        "VERIFY": {"hash": hashes.SHA1, "pad": PKCS1v15},
+        "ENCRYPT": {"hash": hashes.SHA1, "pad": PKCS1v15},
+        "DECRYPT": {"hash": hashes.SHA1, "pad": PKCS1v15},
+    },
+    PyKCS11.CKM_RSA_PKCS_PSS: {
+        "SIGN": {"hash": asym_utils.Prehashed, "pad": PSS},
+        "VERIFY": {"hash": asym_utils.Prehashed, "pad": PSS},
+        "ENCRYPT": {"hash": asym_utils.Prehashed, "pad": PSS},
+        "DECRYPT": {"hash": asym_utils.Prehashed, "pad": PSS},
+    },
+    PyKCS11.CKM_SHA224_RSA_PKCS_PSS: {
+        "SIGN": {"hash": hashes.SHA224, "pad": PSS},
+        "VERIFY": {"hash": hashes.SHA224, "pad": PSS},
+        "ENCRYPT": {"hash": hashes.SHA224, "pad": PSS},
+        "DECRYPT": {"hash": hashes.SHA224, "pad": PSS},
+    },
+    PyKCS11.CKM_SHA256_RSA_PKCS_PSS: {
+        "SIGN": {"hash": hashes.SHA256, "pad": PSS},
+        "VERIFY": {"hash": hashes.SHA256, "pad": PSS},
+        "ENCRYPT": {"hash": hashes.SHA256, "pad": PSS},
+        "DECRYPT": {"hash": hashes.SHA256, "pad": PSS},
+    },
+    PyKCS11.CKM_SHA384_RSA_PKCS_PSS: {
+        "SIGN": {"hash": hashes.SHA384, "pad": PSS},
+        "VERIFY": {"hash": hashes.SHA384, "pad": PSS},
+        "ENCRYPT": {"hash": hashes.SHA384, "pad": PSS},
+        "DECRYPT": {"hash": hashes.SHA384, "pad": PSS},
+    },
+    PyKCS11.CKM_SHA512_RSA_PKCS_PSS: {
+        "SIGN": {"hash": hashes.SHA512, "pad": PSS},
+        "VERIFY": {"hash": hashes.SHA512, "pad": PSS},
+        "ENCRYPT": {"hash": hashes.SHA512, "pad": PSS},
+        "DECRYPT": {"hash": hashes.SHA512, "pad": PSS},
+    },
+    PyKCS11.CKM_SHA1_RSA_PKCS_PSS: {
+        "SIGN": {"hash": hashes.SHA1, "pad": PSS},
+        "VERIFY": {"hash": hashes.SHA1, "pad": PSS},
+        "ENCRYPT": {"hash": hashes.SHA1, "pad": PSS},
+        "DECRYPT": {"hash": hashes.SHA1, "pad": PSS},
+    },
+    PyKCS11.CKM_RSA_PKCS_OAEP: {
+        "SIGN": {"hash": asym_utils.Prehashed, "pad": OAEP},
+        "VERIFY": {"hash": asym_utils.Prehashed, "pad": OAEP},
+        "ENCRYPT": {"hash": asym_utils.Prehashed, "pad": OAEP},
+        "DECRYPT": {"hash": asym_utils.Prehashed, "pad": OAEP},
+    },
+}
+
+mgf_methods = {
+    hashes.SHA1: PyKCS11.CKG_MGF1_SHA1,
+    hashes.SHA224: PyKCS11.CKG_MGF1_SHA224,
+    hashes.SHA256: PyKCS11.CKG_MGF1_SHA256,
+    hashes.SHA384: PyKCS11.CKG_MGF1_SHA384,
+    hashes.SHA512: PyKCS11.CKG_MGF1_SHA512,
+    # hashes.SHA3_224: PyKCS11.CKG_MGF1_SHA3_224,
+    # hashes.SHA3_256: PyKCS11.CKG_MGF1_SHA3_256,
+    # hashes.SHA3_384: PyKCS11.CKG_MGF1_SHA3_384,
+    # hashes.SHA3_512: PyKCS11.CKG_MGF1_SHA3_512,
+}
+
+# Get PKCS11 mechanism from hashing algorithm and padding information for sign/verify
+
+
+def _get_PKSC11_mechanism_SV(operation_dict, algorithm, padding, digest_dict):
+    PK_me = None
+    cls = algorithm.__class__
+    pcls = padding.__class__
+    if "hash" in operation_dict and cls in operation_dict["hash"]:
+        mech = operation_dict["hash"][cls]
+        if pcls == PKCS1v15:
+            PK_me = PyKCS11.Mechanism(mech)
+        if pcls == PSS:
+            mc = padding.mgf.__class__
+            mgf = mgf_methods[mc]
+            hash = digest_dict[mc]  # ?????
+            mech = PyKCS11.Mechanism(operation_dict["pad"][pcls])
+            PK_me = PyKCS11.RSA_PSS_Mechanism(
+                mech, hash, mgf, padding._salt_length
+            )
+        if pcls == OAEP:
+            mc = padding.mgf._algorithm.__class__
+            hc = padding.algorithm.__class__
+            hash = digest_dict[hc]
+            mgf = mgf_methods[mc]
+            PK_me = PyKCS11.RSAOAEPMechanism(hash, mgf)
+    return PK_me
+
+
+# Get PKCS11 mechanism from padding information for encryption/decryption
+
+
+def _get_PKSC11_mechanism_ED(operation_dict, padding, digest_dict):
+    PK_me = None
+    pcls = padding.__class__
+    if "pad" in operation_dict and pcls in operation_dict["pad"]:
+        if pcls == PKCS1v15:
+            PK_me = PyKCS11.MechanismRSAPKCS1
+        if pcls == PSS:
+            mc = padding.mgf.__class__
+            mgf = mgf_methods[mc]
+            hash = digest_dict[mc]  # ?????
+            mech = PyKCS11.Mechanism(operation_dict["pad"][pcls])
+            PK_me = PyKCS11.RSA_PSS_Mechanism(
+                mech, hash, mgf, padding._salt_length
+            )
+        if pcls == OAEP:
+            mc = padding.mgf._algorithm.__class__
+            hc = padding.algorithm.__class__
+            hash = digest_dict[hc]
+            mgf = mgf_methods[mc]
+            PK_me = PyKCS11.RSAOAEPMechanism(hash, mgf)
+    return PK_me
+
+
+class RSAPublicKeyPKCS11:
+    def __init__(self, session, public_key, operations: dict):
+        self._session = session
+        self._public_key = public_key
+        self._operations = operations
+
+    # cryptography API
+    def encrypt(self, plaintext: bytes, padding: AsymmetricPadding) -> bytes:
+        if self._session is not None:
+            PK_me = _get_PKSC11_mechanism_ED(
+                self._operations["ENCRYPT"], padding, self._operations["DIGEST"]
+            )
+            if PK_me is not None:
+                encrypted_text = self._session.encrypt(
+                    self._public_key, plaintext, PK_me
+                )
+            else:
+                raise UnsupportedAlgorithm(
+                    "Algorithm not supported: {0}".format(padding.__class__)
+                )
+            return bytes(encrypted_text)
+
+    @property
+    def key_size(self) -> int:
+        if self._session is not None:
+            attrs = self._session.getAttributeValue(
+                self._public_key,
+                [PyKCS11.CKA_MODULUS_BITS],
+            )
+            return int(attrs[0])
+
+    def public_numbers(self) -> RSAPublicNumbers:
+        if self._session is not None:
+            attrs = self._session.getAttributeValue(
+                self._public_key,
+                [PyKCS11.CKA_MODULUS, PyKCS11.CKA_PUBLIC_EXPONENT],
+            )
+            m = int(binascii.hexlify(bytearray(attrs[0])), 16)
+            e = int(binascii.hexlify(bytearray(attrs[1])), 16)
+            return RSAPublicNumbers(e, m)
+
+    def public_bytes(
+        self,
+        encoding: _serialization.Encoding,
+        format: _serialization.PublicFormat,
+    ) -> bytes:
+        if self._session is not None:
+
+            attributes = self._session.getAttributeValue(
+                self._public_key, [PyKCS11.CKA_VALUE]
+            )
+            pubkey = bytes(attributes[0])
+            key = load_der_public_key(pubkey, default_backend)
+            return key.public_bytes(encoding, format)
+
+    def verify(
+        self,
+        signature: bytes,
+        data: bytes,
+        padding: AsymmetricPadding,
+        algorithm: asym_utils.Prehashed | hashes.HashAlgorithm,
+    ) -> None:
+        if self._session != None:
+            PK_me = _get_PKSC11_mechanism_SV(
+                self._operations["VERIFY"],
+                algorithm,
+                padding,
+                self._operations["DIGEST"],
+            )
+            rez = False
+            if PK_me is None:
+                raise UnsupportedAlgorithm(
+                    "Algorithm not supported: {0} + {1}".format(
+                        padding.__class__, algorithm.__class__
+                    )
+                )
+            else:
+                rez = self._session.verify(
+                    self._public_key, data, signature, PK_me
+                )
+            if not rez:
+                raise InvalidSignature("Signature verification failed.")
+
+    def recover_data_from_signature(
+        self,
+        signature: bytes,
+        padding: AsymmetricPadding,
+        algorithm: hashes.HashAlgorithm | None,
+    ) -> bytes:
+        raise NotImplemented()
+
+    def __eq__(self, other: object) -> bool:
+        return self._public_key == other._public_key
+
+
+RSAPublicKeyWithSerialization = RSAPublicKeyPKCS11
+RSAPublicKey.register(RSAPublicKeyPKCS11)
+
+
+class RSAPrivateKeyPKCS11(PKCS11Token):
+    def __init__(self, session, keyid, key_type, pk_ref):
+        super().__init__(session, keyid, key_type, pk_ref)
+
+    # Register mechanism to operation as card capability
+    def _get_mechanism_translation(self, method, PKCS11_mechanism):
+        mm = PyKCS11.CKM[PKCS11_mechanism]
+        if (
+            mm in _digest_algorithm_implementations
+            and method
+            in _digest_algorithm_implementations[PyKCS11.CKM[PKCS11_mechanism]]
+        ):
+            return _digest_algorithm_implementations[
+                PyKCS11.CKM[PKCS11_mechanism]
+            ][method]
+
+    # cryptography API
+    def decrypt(self, ciphertext: bytes, padding: AsymmetricPadding) -> bytes:
+        if self._session is not None:
+            PK_me = _get_PKSC11_mechanism_ED(
+                self._operations["DECRYPT"], padding, self._operations["DIGEST"]
+            )
+            if PK_me is not None:
+                decrypted_text = self._session.decrypt(
+                    self._private_key, ciphertext, PK_me
+                )
+            else:
+                raise UnsupportedAlgorithm(
+                    "Algorithm not supported: {0}".format(padding.__class__)
+                )
+            return bytes(decrypted_text)
+
+    @property
+    def key_size(self) -> int:
+        if self._session is not None:
+            attrs = self._session.getAttributeValue(
+                self._private_key,
+                [PyKCS11.CKA_MODULUS_BITS],
+            )
+            return int(attrs[0])
+
+    def public_key(self) -> RSAPublicKeyPKCS11:
+        if self._session is not None:
+            pubkey = self._session.findObjects(
+                [
+                    (PyKCS11.CKA_CLASS, PyKCS11.CKO_PUBLIC_KEY),
+                    (PyKCS11.CKA_ID, self._keyid),
+                ]
+            )[0]
+            return RSAPublicKeyPKCS11(self._session, pubkey, self._operations)
+
+    def sign(
+        self,
+        data: bytes,
+        padding: AsymmetricPadding,
+        algorithm: asym_utils.Prehashed | hashes.HashAlgorithm,
+    ) -> bytes:
+        PK_me = _get_PKSC11_mechanism_SV(
+            self._operations["SIGN"],
+            algorithm,
+            padding,
+            self._operations["DIGEST"],
+        )
+        if PK_me is not None:
+            sig = self._sign(data, PK_me)
+            return bytes(sig)
+        else:
+            raise UnsupportedAlgorithm(
+                "Algorithm not supported: {0}".format(padding.__class__)
+            )
+
+    def private_numbers(self) -> RSAPrivateNumbers:
+        raise NotImplemented()
+
+    def private_bytes(
+        self,
+        encoding: _serialization.Encoding,
+        format: _serialization.PrivateFormat,
+        encryption_algorithm: _serialization.KeySerializationEncryption,
+    ) -> bytes:
+        raise NotImplemented()
+
+
+RSAPrivateKeyWithSerialization = RSAPrivateKeyPKCS11
+RSAPrivateKey.register(RSAPrivateKeyPKCS11)
+
+
+def get_key(session, keyid, key_type, pk_ref):
+    return RSAPrivateKeyPKCS11(session, keyid, key_type, pk_ref)
