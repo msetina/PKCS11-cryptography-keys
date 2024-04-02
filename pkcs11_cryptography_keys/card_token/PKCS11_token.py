@@ -1,3 +1,4 @@
+from typing import Dict
 import PyKCS11
 from cryptography import x509
 from cryptography.exceptions import UnsupportedAlgorithm
@@ -18,11 +19,11 @@ class PKCS11Token:
         self._private_key = pk_ref
         # operations supported by the card
         # they are separated in method groups (DIGEST,VERIFY,SIGN,ENCRYPT,DECRYPT)
-        self._operations = {}
+        self._operations: Dict[str, Dict] = {}
 
     # API to init card allowed operations
     def _get_mechanism_translation(self, method, PKCS11_mechanism):
-        raise NotImplemented()
+        raise NotImplementedError("Just a stub!")
 
     # At the init time the call to fill_operations will translate method
     # and mechanism to parameters form cryptography API calls

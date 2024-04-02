@@ -7,7 +7,7 @@ from .PKCS11_session import PKCS11Session
 
 # contextmanager to facilitate connecting to source
 class PKCS11SlotSession(PKCS11Session):
-    def __init__(self, pksc11_lib, token_label, pin):
+    def __init__(self, pksc11_lib: str, token_label: str, pin: str):
         super().__init__()
         self._pksc11_lib = pksc11_lib
         self._token_label = token_label

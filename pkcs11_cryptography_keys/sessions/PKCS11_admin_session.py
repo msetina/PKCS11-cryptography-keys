@@ -11,9 +11,9 @@ from .PKCS11_key_session import PKCS11KeySession
 class PKCS11AdminSession(PKCS11KeySession):
     def __init__(
         self,
-        pksc11_lib,
-        token_label,
-        pin,
+        pksc11_lib: str,
+        token_label: str,
+        pin: str,
         key_label: str = None,
         key_id: bytes = None,
     ):

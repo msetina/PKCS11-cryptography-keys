@@ -7,9 +7,11 @@ from .PKCS11_slot_session import PKCS11SlotSession
 
 # contextmanager to facilitate connecting to source
 class PKCS11KeySession(PKCS11SlotSession):
-    def __init__(self, pksc11_lib, token_label, pin, key_label: str = None):
+    def __init__(
+        self, pksc11_lib: str, token_label: str, pin: str, key_label: str = None
+    ):
         super().__init__(pksc11_lib, token_label, pin)
-        self._key_label: str = key_label
+        self._key_label = key_label
 
     # get private key reference and get key type and keyid for it
     def _get_private_key(self, key_label: str = None):

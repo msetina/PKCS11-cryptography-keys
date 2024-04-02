@@ -3,15 +3,21 @@
 # for complete details.
 
 import binascii
-from typing import Dict
+from typing import Dict, Optional
 
 import PyKCS11
 from asn1crypto.core import ObjectIdentifier, OctetString
 from cryptography.exceptions import InvalidSignature
-from cryptography.hazmat._oid import ObjectIdentifier as cryptoObjectIdentifier
-from cryptography.hazmat.primitives import _serialization, hashes
+from cryptography.x509 import ObjectIdentifier as cryptoObjectIdentifier
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.serialization import (
+    Encoding,
+    PrivateFormat,
+    PublicFormat,
+    KeySerializationEncryption,
+)
 from cryptography.hazmat.primitives.asymmetric.ec import (
-    _OID_TO_CURVE,
+    get_curve_for_oid,
     ECDH,
     EllipticCurve,
     EllipticCurvePrivateKey,
@@ -68,7 +74,7 @@ _digest_algorithm_implementations: Dict[str, Dict] = {
 def _get_curve_class(data: bytes):
     oid = ObjectIdentifier.load(data)
     coi = cryptoObjectIdentifier(oid.dotted)
-    return _OID_TO_CURVE.get(coi, None)
+    return get_curve_for_oid(coi)
 
 
 # Get PKCS11 mechanism from hashing algorithm for sign/verify
@@ -99,7 +105,7 @@ class EllipticCurvePublicKeyPKCS11:
         self._session = session
         self._public_key = public_key
         self._operations = operations
-        self._public_key_buffer = None
+        self._public_key_buffer: EllipticCurvePublicKey
 
     def _read_public_key_data(self) -> EllipticCurvePublicKey:
         if self._session is not None and self._public_key_buffer is None:
@@ -128,26 +134,34 @@ class EllipticCurvePublicKeyPKCS11:
         key = self._read_public_key_data()
         if key != None:
             return key.curve
+        else:
+            raise Exception("Key not found")
 
     @property
     def key_size(self) -> int:
         key = self._read_public_key_data()
         if key != None:
             return key.key_size
+        else:
+            raise Exception("KEy not found")
 
     def public_numbers(self) -> EllipticCurvePublicNumbers:
         key = self._read_public_key_data()
         if key != None:
             return key.public_numbers()
+        else:
+            raise Exception("Key not found")
 
     def public_bytes(
         self,
-        encoding: _serialization.Encoding,
-        format: _serialization.PublicFormat,
+        encoding: Encoding,
+        format: PublicFormat,
     ) -> bytes:
         key = self._read_public_key_data()
         if key != None:
             return key.public_bytes(encoding, format)
+        else:
+            raise Exception("Key not found")
 
     def verify(
         self,
@@ -168,9 +182,14 @@ class EllipticCurvePublicKeyPKCS11:
                 )
             if not rez:
                 raise InvalidSignature("Signature verification failed.")
+        else:
+            raise Exception("Session to card missing")
 
     def __eq__(self, other: object) -> bool:
-        return self._public_key == other._public_key
+        if isinstance(other, EllipticCurvePublicKeyPKCS11):
+            return self._public_key == other._public_key
+        else:
+            return False
 
 
 EllipticCurvePublicKeyWithSerialization = EllipticCurvePublicKeyPKCS11
@@ -197,8 +216,8 @@ class EllipticCurvePrivateKeyPKCS11(PKCS11Token):
         self, algorithm: ECDH, peer_public_key: EllipticCurvePublicKey
     ) -> bytes:
         publicData = peer_public_key.public_bytes(
-            _serialization.Encoding.X962,
-            _serialization.PublicFormat.UncompressedPoint,
+            Encoding.X962,
+            PublicFormat.UncompressedPoint,
         )
         # :param publicData: Other party public key which is EC Point [PC || coord-x || coord-y]. 04 || x || y
         # :param kdf: Key derivation function. OPTIONAL. Defaults to CKD_NULL
@@ -225,7 +244,7 @@ class EllipticCurvePrivateKeyPKCS11(PKCS11Token):
         # :return: the unwrapped key object
         # :rtype: integer
 
-        raise NotImplemented()
+        raise NotImplementedError("Exchange not implemented yet.")
 
     def public_key(self) -> EllipticCurvePublicKeyPKCS11:
         if self._session is not None:
@@ -238,6 +257,8 @@ class EllipticCurvePrivateKeyPKCS11(PKCS11Token):
             return EllipticCurvePublicKeyPKCS11(
                 self._session, pubkey, self._operations
             )
+        else:
+            raise Exception("Session to card missing")
 
     @property
     def curve(self) -> EllipticCurve:
@@ -249,8 +270,9 @@ class EllipticCurvePrivateKeyPKCS11(PKCS11Token):
                 ],
             )
             curve_class = _get_curve_class(bytes(ec_attrs[0]))
-            if curve_class != None:
-                return curve_class()
+            return curve_class()
+        else:
+            raise Exception("Session to card missing")
 
     @property
     def key_size(self) -> int:
@@ -262,9 +284,10 @@ class EllipticCurvePrivateKeyPKCS11(PKCS11Token):
                 ],
             )
             curve_class = _get_curve_class(bytes(ec_attrs[0]))
-            if curve_class != None:
-                curve = curve_class()
-                return curve.key_size
+            curve = curve_class()
+            return curve.key_size
+        else:
+            raise Exception("Session to card missing")
 
     def sign(
         self,
@@ -281,15 +304,15 @@ class EllipticCurvePrivateKeyPKCS11(PKCS11Token):
         )
 
     def private_numbers(self) -> EllipticCurvePrivateNumbers:
-        raise NotImplemented()
+        raise NotImplementedError("Cards should not export private key")
 
     def private_bytes(
         self,
-        encoding: _serialization.Encoding,
-        format: _serialization.PrivateFormat,
-        encryption_algorithm: _serialization.KeySerializationEncryption,
+        encoding: Encoding,
+        format: PrivateFormat,
+        encryption_algorithm: KeySerializationEncryption,
     ) -> bytes:
-        raise NotImplemented()
+        raise NotImplementedError("Cards should not export private key")
 
 
 EllipticCurvePrivateKeyWithSerialization = EllipticCurvePrivateKeyPKCS11

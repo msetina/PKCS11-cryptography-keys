@@ -7,7 +7,7 @@ from .PKCS11_slot_session import PKCS11SlotSession
 
 # contextmanager to facilitate connecting to source
 class PKCS11SlotAdminSession(PKCS11SlotSession):
-    def __init__(self, pksc11_lib, token_label, pin):
+    def __init__(self, pksc11_lib: str, token_label: str, pin: str):
         super().__init__(pksc11_lib, token_label, pin)
 
     # Open session with the card

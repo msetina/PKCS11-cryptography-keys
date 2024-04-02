@@ -201,6 +201,8 @@ class RSAPublicKeyPKCS11:
                     "Algorithm not supported: {0}".format(padding.__class__)
                 )
             return bytes(encrypted_text)
+        else:
+            raise Exception("Session to card missing")
 
     @property
     def key_size(self) -> int:
@@ -210,6 +212,8 @@ class RSAPublicKeyPKCS11:
                 [PyKCS11.CKA_MODULUS_BITS],
             )
             return int(attrs[0])
+        else:
+            raise Exception("Session to card missing")
 
     def public_numbers(self) -> RSAPublicNumbers:
         if self._session is not None:
@@ -220,6 +224,8 @@ class RSAPublicKeyPKCS11:
             m = int(binascii.hexlify(bytearray(attrs[0])), 16)
             e = int(binascii.hexlify(bytearray(attrs[1])), 16)
             return RSAPublicNumbers(e, m)
+        else:
+            raise Exception("Session to card missing")
 
     def public_bytes(
         self,
@@ -232,8 +238,10 @@ class RSAPublicKeyPKCS11:
                 self._public_key, [PyKCS11.CKA_VALUE]
             )
             pubkey = bytes(attributes[0])
-            key = load_der_public_key(pubkey, default_backend)
+            key = load_der_public_key(pubkey, default_backend())
             return key.public_bytes(encoding, format)
+        else:
+            raise Exception("Session to card missing")
 
     def verify(
         self,
@@ -262,6 +270,8 @@ class RSAPublicKeyPKCS11:
                 )
             if not rez:
                 raise InvalidSignature("Signature verification failed.")
+        else:
+            raise Exception("Session to card missing")
 
     def recover_data_from_signature(
         self,
@@ -269,10 +279,15 @@ class RSAPublicKeyPKCS11:
         padding: AsymmetricPadding,
         algorithm: hashes.HashAlgorithm | None,
     ) -> bytes:
-        raise NotImplemented()
+        raise NotImplementedError(
+            "Recover data from signature not implemented yet"
+        )
 
     def __eq__(self, other: object) -> bool:
-        return self._public_key == other._public_key
+        if isinstance(other, RSAPublicKeyPKCS11):
+            return self._public_key == other._public_key
+        else:
+            return False
 
 
 RSAPublicKeyWithSerialization = RSAPublicKeyPKCS11
@@ -294,6 +309,8 @@ class RSAPrivateKeyPKCS11(PKCS11Token):
             return _digest_algorithm_implementations[
                 PyKCS11.CKM[PKCS11_mechanism]
             ][method]
+        else:
+            raise Exception("Session to card missing")
 
     # cryptography API
     def decrypt(self, ciphertext: bytes, padding: AsymmetricPadding) -> bytes:
@@ -310,6 +327,8 @@ class RSAPrivateKeyPKCS11(PKCS11Token):
                     "Algorithm not supported: {0}".format(padding.__class__)
                 )
             return bytes(decrypted_text)
+        else:
+            raise Exception("Session to card missing")
 
     @property
     def key_size(self) -> int:
@@ -319,6 +338,8 @@ class RSAPrivateKeyPKCS11(PKCS11Token):
                 [PyKCS11.CKA_MODULUS_BITS],
             )
             return int(attrs[0])
+        else:
+            raise Exception("Session to card missing")
 
     def public_key(self) -> RSAPublicKeyPKCS11:
         if self._session is not None:
@@ -329,6 +350,8 @@ class RSAPrivateKeyPKCS11(PKCS11Token):
                 ]
             )[0]
             return RSAPublicKeyPKCS11(self._session, pubkey, self._operations)
+        else:
+            raise Exception("Session to card missing")
 
     def sign(
         self,
@@ -351,7 +374,7 @@ class RSAPrivateKeyPKCS11(PKCS11Token):
             )
 
     def private_numbers(self) -> RSAPrivateNumbers:
-        raise NotImplemented()
+        raise NotImplementedError("Cards should not export private key")
 
     def private_bytes(
         self,
@@ -359,7 +382,7 @@ class RSAPrivateKeyPKCS11(PKCS11Token):
         format: _serialization.PrivateFormat,
         encryption_algorithm: _serialization.KeySerializationEncryption,
     ) -> bytes:
-        raise NotImplemented()
+        raise NotImplementedError("Cards should not export private key")
 
 
 RSAPrivateKeyWithSerialization = RSAPrivateKeyPKCS11

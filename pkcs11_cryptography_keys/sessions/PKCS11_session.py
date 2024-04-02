@@ -9,7 +9,7 @@ class PKCS11Session(object):
     # Open session with the card
     # Uses pin if needed, reads permited operations(mechanisms)
     def open(self):
-        raise NotImplemented()
+        raise NotImplementedError("Just a stub")
 
     # context manager API
     def __enter__(self):

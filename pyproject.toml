@@ -52,8 +52,6 @@ testing = [
 ]
 mypy = [
     "PKCS11-cryptography-keys",
-    "asn1crypto",
-    "cryptography",
     "types-PyYAML",
 ]
 
