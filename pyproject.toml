@@ -7,7 +7,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "PKCS11-cryptography-keys"
-description = "Python chryptography keys implemented on to of PKCS11 interface"
+description = "Python chryptography keys implemented on to the PKCS11 interface"
 authors = [{name = "Miha Šetina", email = "miha.setina@gmail.com"}]
 maintainers = [{name = "Miha Šetina", email = "miha.setina@gmail.com"}]
 license = {text = "APACHE,BSD"}
@@ -52,6 +52,8 @@ testing = [
 ]
 mypy = [
     "PKCS11-cryptography-keys",
+    "asn1crypto",
+    "cryptography",
     "types-PyYAML",
 ]
 
