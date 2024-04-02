@@ -13,14 +13,14 @@ jobs:
       - uses: actions/setup-python@v5
       - run: pip install --upgrade pip isort black
       - name: Check import order
-        run: isort --profile black --line-length 80 --check pyhanko_eoi*
+        run: isort --profile black --line-length 80 --check pkcs11_cryptography_keys*
       - name: Run Black
-        run: black -S --line-length 80 --check pyhanko_eoi*
+        run: black -S --line-length 80 --check pkcs11_cryptography_keys*
   mypy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: jpetrucciani/mypy-check@0.991
         with:
-          path: pyhanko_eoi
+          path: pkcs11_cryptography_keys
           requirements: "-e .[mypy] --config-settings editable_mode=strict"
