@@ -14,14 +14,14 @@ class PKCS11AdminSession(PKCS11KeySession):
         pksc11_lib: str,
         token_label: str,
         pin: str,
-        key_label: str = None,
-        key_id: bytes = None,
+        key_label: str | None = None,
+        key_id: bytes | None = None,
     ):
         super().__init__(pksc11_lib, token_label, pin, key_label)
         self._key_id = key_id
 
     # get private key id and label
-    def _get_private_key_info(self, key_label: str = None):
+    def _get_private_key_info(self, key_label: str | None = None):
         if self._session is not None:
             if key_label is None:
                 private_key = self._session.findObjects(
