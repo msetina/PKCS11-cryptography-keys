@@ -29,6 +29,7 @@ classifiers = [
 ]
 requires-python = ">=3.10"
 dependencies = [
+    "swig>=4.2.0",
     "PyKCS11>=1.5.11",
     "cryptography>=42.0.5",
     "asn1crypto>=1.5.1"

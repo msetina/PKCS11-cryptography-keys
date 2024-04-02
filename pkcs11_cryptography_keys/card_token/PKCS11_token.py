@@ -1,4 +1,5 @@
 from typing import Dict
+
 import PyKCS11
 from cryptography import x509
 from cryptography.exceptions import UnsupportedAlgorithm

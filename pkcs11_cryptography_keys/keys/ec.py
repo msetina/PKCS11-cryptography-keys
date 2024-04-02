@@ -8,16 +8,8 @@ from typing import Dict, Optional
 import PyKCS11
 from asn1crypto.core import ObjectIdentifier, OctetString
 from cryptography.exceptions import InvalidSignature
-from cryptography.x509 import ObjectIdentifier as cryptoObjectIdentifier
 from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.serialization import (
-    Encoding,
-    PrivateFormat,
-    PublicFormat,
-    KeySerializationEncryption,
-)
 from cryptography.hazmat.primitives.asymmetric.ec import (
-    get_curve_for_oid,
     ECDH,
     EllipticCurve,
     EllipticCurvePrivateKey,
@@ -25,11 +17,19 @@ from cryptography.hazmat.primitives.asymmetric.ec import (
     EllipticCurvePublicKey,
     EllipticCurvePublicNumbers,
     EllipticCurveSignatureAlgorithm,
+    get_curve_for_oid,
 )
 from cryptography.hazmat.primitives.asymmetric.utils import (
     Prehashed,
     encode_dss_signature,
 )
+from cryptography.hazmat.primitives.serialization import (
+    Encoding,
+    KeySerializationEncryption,
+    PrivateFormat,
+    PublicFormat,
+)
+from cryptography.x509 import ObjectIdentifier as cryptoObjectIdentifier
 
 from pkcs11_cryptography_keys.card_token.PKCS11_token import PKCS11Token
 
