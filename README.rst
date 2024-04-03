@@ -15,10 +15,10 @@ key label, if there are more that one private keys on a token). Within the ``wit
 the cryptographic operations with the key are made.
 
 The ``PKCS11KeySession`` context meneager will return private key object of the type referenced by
-library, token label and in some cases key label written on the PKCS11 device. From private key 
+library, token label and in some cases key label written on the ``PKCS11`` device. From private key 
 public key can be retrieved like in pyca/cryptography and also certificates (and even CA chain)
-(this is the extension PKCS11 device tokens can provide).
+(this is the extension ``PKCS11`` device tokens can provide).
 
-This library provides keys for EC and RSA keys which are most comonly used keys on PKCS11 devices.
+This library provides keys for EC and RSA keys which are most comonly used keys on ``PKCS11`` devices.
 
 
