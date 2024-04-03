@@ -20,10 +20,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+      - run: pip install --upgrade pip mypy
       - name: setup prerequisites (linux)
         shell: bash
         run: sudo apt install swig
-      - uses: jpetrucciani/mypy-check@0.991
-        with:
-          path: pkcs11_cryptography_keys
-          requirements: "-e .[mypy] --config-settings editable_mode=strict"
+      - name: Run mypy
+        run: mypy pkcs11_cryptography_keys
+    
