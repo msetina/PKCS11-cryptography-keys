@@ -20,6 +20,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: setup prerequisites (linux)
+        shell: bash
+        run: sudo apt install swig
       - uses: jpetrucciani/mypy-check@0.991
         with:
           path: pkcs11_cryptography_keys

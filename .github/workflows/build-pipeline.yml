@@ -29,6 +29,9 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.MAIN_PYTHON_VERSION }}
+      - name: setup prerequisites (linux)
+        shell: bash
+        run: sudo apt install swig
       - name: Install build tools
         run: pip install --upgrade build setuptools pip wheel
       - name: Build release artifacts
