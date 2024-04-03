@@ -6,7 +6,7 @@ from pkcs11_cryptography_keys.sessions.PKCS11_admin_session import (
 
 
 # Supoort function to list admin sessions
-def list_token_admins(pksc11_lib, pin):
+def list_token_admins(pksc11_lib: str, pin: str):
     library = PyKCS11.PyKCS11Lib()
     library.load(pksc11_lib)
     slots = library.getSlotList(tokenPresent=True)
