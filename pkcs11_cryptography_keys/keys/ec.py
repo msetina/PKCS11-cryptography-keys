@@ -3,7 +3,7 @@
 # for complete details.
 
 import binascii
-from typing import Dict, Optional
+from typing import Dict
 
 import PyKCS11
 from asn1crypto.core import ObjectIdentifier, OctetString
@@ -215,36 +215,54 @@ class EllipticCurvePrivateKeyPKCS11(PKCS11Token):
     def exchange(
         self, algorithm: ECDH, peer_public_key: EllipticCurvePublicKey
     ) -> bytes:
-        publicData = peer_public_key.public_bytes(
-            Encoding.X962,
-            PublicFormat.UncompressedPoint,
-        )
-        # :param publicData: Other party public key which is EC Point [PC || coord-x || coord-y]. 04 || x || y
-        # :param kdf: Key derivation function. OPTIONAL. Defaults to CKD_NULL
-        # :param sharedData: additional shared data. OPTIONAL
-        mech = PyKCS11.ECDH1_DERIVE_Mechanism(
-            publicData, kdf=1, sharedData=None
-        )
-        template = [
-            (PyKCS11.CKA_CLASS, PyKCS11.CKO_PRIVATE_KEY),
-            (PyKCS11.CKA_KEY_TYPE, PyKCS11.CKK_ECDSA),
-            (PyKCS11.CKA_TOKEN, PyKCS11.CK_TRUE),
-            (PyKCS11.CKA_SENSITIVE, PyKCS11.CK_TRUE),
-            (PyKCS11.CKA_DECRYPT, PyKCS11.CK_TRUE),
-            (PyKCS11.CKA_SIGN, PyKCS11.CK_TRUE),
-            (PyKCS11.CKA_UNWRAP, PyKCS11.CK_TRUE),
-        ]
+        if self._session is not None:
+            publicData = peer_public_key.public_bytes(
+                Encoding.X962,
+                PublicFormat.UncompressedPoint,
+            )
+            # :param publicData: Other party public key which is EC Point [PC || coord-x || coord-y]. 04 || x || y
+            # :param kdf: Key derivation function. OPTIONAL. Defaults to CKD_NULL
+            # :param sharedData: additional shared data. OPTIONAL
+            mech = PyKCS11.ECDH1_DERIVE_Mechanism(
+                publicData, kdf=1, sharedData=None
+            )
+            keyID = (0x22,)
+            template = [
+                (PyKCS11.CKA_CLASS, PyKCS11.CKO_SECRET_KEY),
+                (PyKCS11.CKA_KEY_TYPE, PyKCS11.CKK_AES),
+                (PyKCS11.CKA_TOKEN, PyKCS11.CK_FALSE),
+                (PyKCS11.CKA_SENSITIVE, PyKCS11.CK_TRUE),
+                (PyKCS11.CKA_PRIVATE, PyKCS11.CK_TRUE),
+                (PyKCS11.CKA_ENCRYPT, PyKCS11.CK_TRUE),
+                (PyKCS11.CKA_DECRYPT, PyKCS11.CK_TRUE),
+                (PyKCS11.CKA_SIGN, PyKCS11.CK_FALSE),
+                (PyKCS11.CKA_EXTRACTABLE, PyKCS11.CK_TRUE),
+                (PyKCS11.CKA_VERIFY, PyKCS11.CK_FALSE),
+                (PyKCS11.CKA_VALUE_LEN, 24),
+                (PyKCS11.CKA_LABEL, "derivedAESKey"),
+                (PyKCS11.CKA_ID, keyID),
+            ]
 
-        ret = self._session.deriveKey(self._private_key, template, mech)
-        # :param baseKey: the base key handle
-        # :type baseKey: integer
-        # :param template: template for the unwrapped key
-        # :param mecha: the decrypt mechanism to be used
-        # :type mecha: :class:`Mechanism`
-        # :return: the unwrapped key object
-        # :rtype: integer
+            derived_key = self._session.deriveKey(
+                self._private_key, template, mech
+            )
+            # :param baseKey: the base key handle
+            # :type baseKey: integer
+            # :param template: template for the unwrapped key
+            # :param mecha: the decrypt mechanism to be used
+            # :type mecha: :class:`Mechanism`
+            # :return: the unwrapped key object
+            # :rtype: integer
 
-        raise NotImplementedError("Exchange not implemented yet.")
+            # get bytes of the key
+            attributes = self._session.getAttributeValue(
+                derived_key, [PyKCS11.CKA_VALUE]
+            )
+            derkey = bytes(attributes[0])
+            self.session.destroyObject(derived_key)
+            return derkey
+        else:
+            raise Exception("Session to card missing")
 
     def public_key(self) -> EllipticCurvePublicKeyPKCS11:
         if self._session is not None:
