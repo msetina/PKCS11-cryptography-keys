@@ -259,7 +259,7 @@ class EllipticCurvePrivateKeyPKCS11(PKCS11Token):
                 derived_key, [PyKCS11.CKA_VALUE]
             )
             derkey = bytes(attributes[0])
-            self.session.destroyObject(derived_key)
+            self._session.destroyObject(derived_key)
             return derkey
         else:
             raise Exception("Session to card missing")
