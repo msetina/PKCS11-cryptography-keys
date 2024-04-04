@@ -10,9 +10,10 @@ def list_token_admins(pksc11_lib: str, pin: str):
     library = PyKCS11.PyKCS11Lib()
     library.load(pksc11_lib)
     slots = library.getSlotList(tokenPresent=True)
-    for idx, sl in enumerate(slots):
-        ti = library.getTokenInfo(idx)
-        yield PKCS11AdminSession(pksc11_lib, ti.label.strip(), pin)
+    for sl in slots:
+        ti = library.getTokenInfo(sl)
+        if ti.flags & PyKCS11.CKF_TOKEN_INITIALIZED != 0:
+            yield PKCS11AdminSession(pksc11_lib, ti.label.strip(), pin)
 
 
 # Support function to list token labels
@@ -20,6 +21,7 @@ def list_token_labels(pksc11_lib: str):
     library = PyKCS11.PyKCS11Lib()
     library.load(pksc11_lib)
     slots = library.getSlotList(tokenPresent=True)
-    for idx, sl in enumerate(slots):
-        ti = library.getTokenInfo(idx)
-        yield ti.label.strip()
+    for sl in slots:
+        ti = library.getTokenInfo(sl)
+        if ti.flags & PyKCS11.CKF_TOKEN_INITIALIZED != 0:
+            yield ti.label.strip()
