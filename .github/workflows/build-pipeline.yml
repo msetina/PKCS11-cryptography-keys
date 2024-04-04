@@ -67,7 +67,7 @@ jobs:
           python -m pip install $REQ
       - name: Install softhsm
         shell: bash
-        run: sudo pip install --upgrade softhsm2
+        run: sudo pip install softhsm2
       - name: Prep softhsm
         shell: bash
         run: |
