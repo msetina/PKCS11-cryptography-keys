@@ -30,7 +30,13 @@ jobs:
         with:
           python-version: ${{ env.MAIN_PYTHON_VERSION }}
       - name: Install build tools
-        run: pip install --upgrade swig build setuptools pip wheel
+        run: pip install --upgrade swig softhsm2 build setuptools pip wheel
+      - name: Prep softhsm
+        run: |
+          sudo chmod -R a+rx /etc/softhsm
+          sudo chmod a+r /etc/softhsm/softhsm2.conf
+          sudo chown -R $(whoami) /var/lib/softhsm
+          softhsm2-util --init-token --slot 0 --label "A token" --pin 1234 --so-pin 123456            
       - name: Build release artifacts
         run: python -m build
       - name: Record release artifact hashes
@@ -65,6 +71,14 @@ jobs:
           WHEEL=(dist/*.whl)
           REQ="${WHEEL[0]}[testing]"
           python -m pip install $REQ
+      - name: Install softhsm
+        run: pip install --upgrade softhsm2
+      - name: Prep softhsm
+        run: |
+          sudo chmod -R a+rx /etc/softhsm
+          sudo chmod a+r /etc/softhsm/softhsm2.conf
+          sudo chown -R $(whoami) /var/lib/softhsm
+          softhsm2-util --init-token --slot 0 --label "A token" --pin 1234 --so-pin 123456
       - name: Test with pytest
         run: python -m pytest --cov=./ --cov-report=xml:python-${{ matrix.python-version }}-coverage.xml
         env:
