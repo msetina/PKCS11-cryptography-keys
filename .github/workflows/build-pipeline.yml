@@ -30,13 +30,7 @@ jobs:
         with:
           python-version: ${{ env.MAIN_PYTHON_VERSION }}
       - name: Install build tools
-        run: pip install --upgrade build setuptools pip wheel swig softhsm2
-      - name: Prep softhsm
-        run: |
-          sudo chmod -R a+rx /etc/softhsm
-          sudo chmod a+r /etc/softhsm/softhsm2.conf
-          sudo chown -R $(whoami) /var/lib/softhsm
-          softhsm2-util --init-token --slot 0 --label "A token" --pin 1234 --so-pin 123456            
+        run: pip install --upgrade build setuptools pip wheel swig                 
       - name: Build release artifacts
         run: python -m build
       - name: Record release artifact hashes
