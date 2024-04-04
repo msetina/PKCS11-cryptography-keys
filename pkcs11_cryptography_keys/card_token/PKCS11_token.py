@@ -61,9 +61,7 @@ class PKCS11Token:
     def _sign(self, data: bytes, PK_me):
         if self._session is not None and self._private_key is not None:
             if PK_me is None:
-                raise UnsupportedAlgorithm(
-                    "Signing algorithm {0} not supported.".format(PK_me)
-                )
+                raise UnsupportedAlgorithm("Signing algorithm not supported.")
             else:
                 sig = self._session.sign(self._private_key, data, PK_me)
             return sig

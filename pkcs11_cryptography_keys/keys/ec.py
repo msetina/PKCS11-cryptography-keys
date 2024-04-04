@@ -7,7 +7,7 @@ from typing import Dict
 
 import PyKCS11
 from asn1crypto.core import ObjectIdentifier, OctetString
-from cryptography.exceptions import InvalidSignature
+from cryptography.exceptions import InvalidSignature, UnsupportedAlgorithm
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric.ec import (
     ECDH,
@@ -313,11 +313,18 @@ class EllipticCurvePrivateKeyPKCS11(PKCS11Token):
         PK_me = _get_PKSC11_mechanism(
             self._operations["SIGN"], signature_algorithm
         )
-        sig = self._sign(data, PK_me)
-        r, s = _decode_RS_signature(sig)
-        return encode_dss_signature(
-            int(binascii.hexlify(r), 16), int(binascii.hexlify(s), 16)
-        )
+        if PK_me is None:
+            raise UnsupportedAlgorithm(
+                "Signing algorithm {0} not supported.".format(
+                    signature_algorithm
+                )
+            )
+        else:
+            sig = self._sign(data, PK_me)
+            r, s = _decode_RS_signature(sig)
+            return encode_dss_signature(
+                int(binascii.hexlify(r), 16), int(binascii.hexlify(s), 16)
+            )
 
     def private_numbers(self) -> EllipticCurvePrivateNumbers:
         raise NotImplementedError("Cards should not export private key")
