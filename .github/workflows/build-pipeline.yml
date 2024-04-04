@@ -30,7 +30,7 @@ jobs:
         with:
           python-version: ${{ env.MAIN_PYTHON_VERSION }}
       - name: Install build tools
-        run: pip install --upgrade swig softhsm2 build setuptools pip wheel
+        run: pip install --upgrade build setuptools pip wheel swig softhsm2
       - name: Prep softhsm
         run: |
           sudo chmod -R a+rx /etc/softhsm
