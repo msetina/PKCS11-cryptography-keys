@@ -31,19 +31,13 @@ class TestBasic:
                 assert pub is not None and priv is not None
                 assert r
 
-    def test_rsa_encryption(self):
+    def test_rsa_encryption_PKCS1v15(self):
         from pkcs11_cryptography_keys import (
             list_token_labels,
             PKCS11AdminSession,
             PKCS11KeySession,
         )
-        from cryptography.hazmat.backends import default_backend
         from cryptography.hazmat.primitives.asymmetric import padding
-        from cryptography.hazmat.primitives.serialization import (
-            Encoding,
-            PublicFormat,
-            load_der_public_key,
-        )
 
         data = b"How to encode this sentence"
         for label in list_token_labels(_pkcs11lib):
@@ -59,6 +53,34 @@ class TestBasic:
                 encrypted = public.encrypt(data, padding1)
                 rezult = current_key.decrypt(encrypted, padding1)
                 assert data == rezult
+            with a_session as current_admin:
+                r = current_admin.delete_key_pair()
+                assert r
+
+    def test_rsa_sign_verify(self):
+        from pkcs11_cryptography_keys import (
+            list_token_labels,
+            PKCS11AdminSession,
+            PKCS11KeySession,
+        )
+        from cryptography.hazmat.primitives import hashes
+        from cryptography.hazmat.primitives.asymmetric import padding
+
+        data = b"How to encode this sentence"
+        for label in list_token_labels(_pkcs11lib):
+            a_session = PKCS11AdminSession(_pkcs11lib, label, "1234", True)
+            with a_session as current_admin:
+                pub, priv = current_admin.create_rsa_key_pair(2048)
+            assert pub is not None and priv is not None
+            k_session = PKCS11KeySession(_pkcs11lib, label, "1234")
+            with k_session as current_key:
+                public = current_key.public_key()
+                padding1 = padding.PKCS1v15()
+                signature = current_key.sign(data, padding1, hashes.SHA256())
+                rezult = public.verify(
+                    signature, data, padding1, hashes.SHA256()
+                )
+                assert rezult is None
             with a_session as current_admin:
                 r = current_admin.delete_key_pair()
                 assert r
