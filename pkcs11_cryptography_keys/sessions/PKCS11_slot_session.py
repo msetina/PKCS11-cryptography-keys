@@ -21,8 +21,8 @@ class PKCS11SlotSession(PKCS11Session):
         slots = library.getSlotList(tokenPresent=True)
         slot = None
         self._login_required = False
-        for idx, sl in enumerate(slots):
-            ti = library.getTokenInfo(idx)
+        for sl in slots:
+            ti = library.getTokenInfo(sl)
             if ti.flags & PyKCS11.CKF_LOGIN_REQUIRED != 0:
                 self._login_required = True
             if self._token_label is None:
