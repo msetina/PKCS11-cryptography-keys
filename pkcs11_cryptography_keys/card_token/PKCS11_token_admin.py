@@ -18,7 +18,7 @@ class PKCS11TokenAdmin:
         if self._session is not None:
             public_objects = self._session.findObjects(
                 [
-                    (PyKCS11.CKA_CLASS, PyKCS11.CKO_PUBLIc_KEY),
+                    (PyKCS11.CKA_CLASS, PyKCS11.CKO_PUBLIC_KEY),
                     (PyKCS11.CKA_ID, self._keyid),
                 ]
             )
@@ -83,7 +83,7 @@ class PKCS11TokenAdmin:
             (pub_key, priv_key) = self._session.generateKeyPair(
                 public_template,
                 private_template,
-                mech=PyKCS11.MechanismRSAGENERATEKEYPAIR,
+                mecha=PyKCS11.MechanismRSAGENERATEKEYPAIR,
             )
             ret = (pub_key, priv_key)
         return ret
