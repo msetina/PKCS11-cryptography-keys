@@ -133,8 +133,8 @@ def _get_PKSC11_mechanism_SV(operation_dict, algorithm, padding, digest_dict):
     PK_me = None
     cls = algorithm.__class__
     pcls = padding.__class__
-    if "hash" in operation_dict and cls in operation_dict["hash"]:
-        mech = operation_dict["hash"][cls]
+    if cls in operation_dict and pcls in operation_dict[cls]:
+        mech = operation_dict[cls][pcls]
         if pcls == PKCS1v15:
             PK_me = PyKCS11.Mechanism(mech)
         if pcls == PSS:
@@ -160,14 +160,14 @@ def _get_PKSC11_mechanism_SV(operation_dict, algorithm, padding, digest_dict):
 def _get_PKSC11_mechanism_ED(operation_dict, padding, digest_dict):
     PK_me = None
     pcls = padding.__class__
-    if "pad" in operation_dict and pcls in operation_dict["pad"]:
+    if pcls in operation_dict:
         if pcls == PKCS1v15:
             PK_me = PyKCS11.MechanismRSAPKCS1
         if pcls == PSS:
             mc = padding.mgf.__class__
             mgf = mgf_methods[mc]
             hash = digest_dict[mc]  # ?????
-            mech = PyKCS11.Mechanism(operation_dict["pad"][pcls])
+            mech = PyKCS11.Mechanism(operation_dict[pcls])
             PK_me = PyKCS11.RSA_PSS_Mechanism(
                 mech, hash, mgf, padding._salt_length
             )
@@ -303,12 +303,23 @@ class RSAPrivateKeyPKCS11(PKCS11Token):
         mm = PyKCS11.CKM[PKCS11_mechanism]
         if (
             mm in _digest_algorithm_implementations
-            and method
-            in _digest_algorithm_implementations[PyKCS11.CKM[PKCS11_mechanism]]
+            and method in _digest_algorithm_implementations[mm]
         ):
-            return _digest_algorithm_implementations[
-                PyKCS11.CKM[PKCS11_mechanism]
-            ][method]
+            definition = _digest_algorithm_implementations[mm][method]
+            if method in [
+                "SIGN",
+                "VERIFY",
+            ]:
+                return [definition["hash"], definition["pad"]]
+            elif method in [
+                "ENCRYPT",
+                "DECRYPT",
+            ]:
+                return [definition["pad"]]
+            elif method in ["DIGEST"]:
+                return [definition["hash"]]
+            else:
+                return []
         else:
             raise Exception("Session to card missing")
 
@@ -370,7 +381,9 @@ class RSAPrivateKeyPKCS11(PKCS11Token):
             return bytes(sig)
         else:
             raise UnsupportedAlgorithm(
-                "Algorithm not supported: {0}".format(padding.__class__)
+                "Not supported. algorithm: {0}, hash:{1}".format(
+                    algorithm.__class__, padding.__class__
+                )
             )
 
     def private_numbers(self) -> RSAPrivateNumbers:

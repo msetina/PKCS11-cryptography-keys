@@ -81,8 +81,8 @@ def _get_curve_class(data: bytes):
 def _get_PKSC11_mechanism(operation_dict, algorithm):
     PK_me = None
     cls = algorithm.algorithm.__class__
-    if "hash" in operation_dict and cls in operation_dict["hash"]:
-        mech = operation_dict["hash"][cls]
+    if cls in operation_dict:
+        mech = operation_dict[cls]
         PK_me = PyKCS11.Mechanism(mech)
     return PK_me
 
@@ -205,12 +205,10 @@ class EllipticCurvePrivateKeyPKCS11(PKCS11Token):
         mm = PyKCS11.CKM[PKCS11_mechanism]
         if (
             mm in _digest_algorithm_implementations
-            and method
-            in _digest_algorithm_implementations[PyKCS11.CKM[PKCS11_mechanism]]
+            and method in _digest_algorithm_implementations[mm]
         ):
-            return _digest_algorithm_implementations[
-                PyKCS11.CKM[PKCS11_mechanism]
-            ][method]
+            definition = _digest_algorithm_implementations[mm][method]
+            return [definition["hash"]]
 
     def exchange(
         self, algorithm: ECDH, peer_public_key: EllipticCurvePublicKey

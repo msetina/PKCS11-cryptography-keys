@@ -43,23 +43,19 @@ class PKCS11Token:
         except Exception as e:
             pass
         if mm:
-            for k, v in mm.items():
-                if method in self._operations:
-                    if k not in self._operations[method]:
-                        self._operations[method][k] = {}
-                    self._operations[method][k][v] = PyKCS11.CKM[
-                        PKCS11_mechanism
-                    ]
+            l = len(mm)
+            if method not in self._operations:
+                self._operations[method] = {}
+            p = self._operations[method]
+            for idx, k in enumerate(mm, start=1):
+                if idx == l:
+                    p[k] = PyKCS11.CKM[PKCS11_mechanism]
                 else:
-                    self._operations[method] = {}
-                    if k not in self._operations[method]:
-                        self._operations[method][k] = {
-                            v: PyKCS11.CKM[PKCS11_mechanism]
-                        }
+                    if k in p:
+                        p = p[k]
                     else:
-                        self._operations[method][k][v] = PyKCS11.CKM[
-                            PKCS11_mechanism
-                        ]
+                        p[k] = {}
+                        p = p[k]
 
     # sign data on the card using provided PK_me which is cards mechanism transalted from cryptography call
     def _sign(self, data: bytes, PK_me):
