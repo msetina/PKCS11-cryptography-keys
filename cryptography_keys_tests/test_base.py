@@ -84,3 +84,31 @@ class TestBasic:
             with a_session as current_admin:
                 r = current_admin.delete_key_pair()
                 assert r
+
+
+# only prehashed supported for EC in softhsm2
+# def test_ec_sign_verify(self):
+#     from pkcs11_cryptography_keys import (
+#         list_token_labels,
+#         PKCS11AdminSession,
+#         PKCS11KeySession,
+#     )
+#     from cryptography.hazmat.primitives import hashes
+#     from cryptography.hazmat.primitives.asymmetric.ec import ECDSA
+
+#     data = b"How to encode this sentence"
+#     for label in list_token_labels(_pkcs11lib):
+#         a_session = PKCS11AdminSession(_pkcs11lib, label, "1234", True)
+#         with a_session as current_admin:
+#             pub, priv = current_admin.create_ec_key_pair("secp256r1")
+#         assert pub is not None and priv is not None
+#         k_session = PKCS11KeySession(_pkcs11lib, label, "1234")
+#         with k_session as current_key:
+#             public = current_key.public_key()
+#             algo = ECDSA(hashes.SHA256())
+#             signature = current_key.sign(data, algo)
+#             rezult = public.verify(signature, data, algo)
+#             assert rezult is None
+#         with a_session as current_admin:
+#             r = current_admin.delete_key_pair()
+#             assert r
