@@ -66,7 +66,7 @@ jobs:
           REQ="${WHEEL[0]}[testing]"
           python -m pip install $REQ
       - name: Install softhsm
-        run: pip install --upgrade softhsm2
+        run: sudo pip install --upgrade softhsm2
       - name: Prep softhsm
         run: |
           sudo chmod -R a+rx /etc/softhsm
