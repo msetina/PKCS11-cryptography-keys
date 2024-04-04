@@ -5,7 +5,7 @@ from pkcs11_cryptography_keys.sessions.PKCS11_admin_session import (
 )
 
 
-# Supoort function to list admin sessions
+# Support function to list admin sessions
 def list_token_admins(pksc11_lib: str, pin: str):
     library = PyKCS11.PyKCS11Lib()
     library.load(pksc11_lib)
@@ -13,3 +13,13 @@ def list_token_admins(pksc11_lib: str, pin: str):
     for idx, sl in enumerate(slots):
         ti = library.getTokenInfo(idx)
         yield PKCS11AdminSession(pksc11_lib, ti.label.strip(), pin)
+
+
+# Support function to list token labels
+def list_token_labels(pksc11_lib: str):
+    library = PyKCS11.PyKCS11Lib()
+    library.load(pksc11_lib)
+    slots = library.getSlotList(tokenPresent=True)
+    for idx, sl in enumerate(slots):
+        ti = library.getTokenInfo(idx)
+        yield ti.label.strip()
