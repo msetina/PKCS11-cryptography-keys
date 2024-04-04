@@ -14,28 +14,35 @@ class PKCS11AdminSession(PKCS11KeySession):
         pksc11_lib: str,
         token_label: str,
         pin: str,
+        norm_user: bool = False,
         key_label: str | None = None,
         key_id: bytes | None = None,
     ):
         super().__init__(pksc11_lib, token_label, pin, key_label)
         self._key_id = key_id
+        self._norm_user = norm_user
 
     # get private key id and label
     def _get_private_key_info(self, key_label: str | None = None):
         if self._session is not None:
+            private_key = None
             if key_label is None:
-                private_key = self._session.findObjects(
+                private_key_s = self._session.findObjects(
                     [
                         (PyKCS11.CKA_CLASS, PyKCS11.CKO_PRIVATE_KEY),
                     ]
-                )[0]
+                )
+                if len(private_key_s) > 0:
+                    private_key = private_key_s[0]
             else:
-                private_key = self._session.findObjects(
+                private_key_s = self._session.findObjects(
                     [
                         (PyKCS11.CKA_CLASS, PyKCS11.CKO_PRIVATE_KEY),
                         (PyKCS11.CKA_LABEL, key_label),
                     ]
-                )[0]
+                )
+                if len(private_key_s) > 0:
+                    private_key = private_key_s[0]
             if private_key is not None:
                 attrs = self._session.getAttributeValue(
                     private_key,
@@ -44,6 +51,8 @@ class PKCS11AdminSession(PKCS11KeySession):
                 keyid = bytes(attrs[0])
                 label = attrs[1]
                 return keyid, label
+            else:
+                return None, None
 
     # Open session with the card
     # Uses pin if needed, reads permited operations(mechanisms)
@@ -53,8 +62,8 @@ class PKCS11AdminSession(PKCS11KeySession):
         slots = library.getSlotList(tokenPresent=True)
         slot = None
 
-        for idx, sl in enumerate(slots):
-            ti = library.getTokenInfo(idx)
+        for sl in slots:
+            ti = library.getTokenInfo(sl)
             if ti.flags & PyKCS11.CKF_LOGIN_REQUIRED != 0:
                 self._login_required = True
             if self._token_label is None:
@@ -68,12 +77,30 @@ class PKCS11AdminSession(PKCS11KeySession):
             )
             if self._session is not None:
                 if self._login_required:
-                    self._session.login(self._pin, PyKCS11.CKU_SO)
+                    if self._norm_user:
+                        self._session.login(self._pin)
+                    else:
+                        self._session.login(self._pin, PyKCS11.CKU_SO)
                 pk_info = self._get_private_key_info(self._key_label)
                 if pk_info is not None:
                     keyid, label = pk_info
+                    if keyid is None:
+                        if self._key_id is None:
+                            if self._key_label is None:
+                                keyid = b"01"
+                            else:
+                                self._key_label.encode()
+                        else:
+                            keyid = self._key_id
+                    if label is None:
+                        if self._key_label is None:
+                            label = b"default"
+                        else:
+                            label = self._key_label
                     return PKCS11TokenAdmin(self._session, keyid, label)
                 else:
+                    if self._key_label is None:
+                        self._key_label = b"01"
                     if self._key_id is None:
                         self._key_id = self._key_label.encode()
                     return PKCS11TokenAdmin(
