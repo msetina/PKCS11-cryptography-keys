@@ -8,7 +8,7 @@ standard library".
 This library uses ``PyKCS11`` to implement comunication to the ``PKCS11`` device (smartcard,...). 
 As PKCS11 devices need an open session to work with them, this library provides 
 context managers to execute tasks provided by pyca/cryptography. ``PKCS11KeySession`` is the 
-context manager that will facilitate the use of mentioned keys.
+context manager that will facilitate the use of implemented keys.
 
 Context managers take information to connect to the ``PKCS11`` device (library, token label and 
 key label, if there are more that one private keys on a token). Within the ``with`` statement 
