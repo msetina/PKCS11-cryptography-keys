@@ -21,8 +21,8 @@ from cryptography.hazmat.primitives.asymmetric.ec import (
 )
 from cryptography.hazmat.primitives.asymmetric.utils import (
     Prehashed,
-    encode_dss_signature,
     decode_dss_signature,
+    encode_dss_signature,
 )
 from cryptography.hazmat.primitives.serialization import (
     Encoding,
@@ -118,10 +118,9 @@ class EllipticCurvePublicKeyPKCS11:
         self._session = session
         self._public_key = public_key
         self._operations = operations
-        self._public_key_buffer: EllipticCurvePublicKey | None = None
 
     def _read_public_key_data(self) -> EllipticCurvePublicKey:
-        if self._session is not None and self._public_key_buffer is None:
+        if self._session is not None:
             ec_attrs = self._session.getAttributeValue(
                 self._public_key,
                 [
@@ -134,12 +133,14 @@ class EllipticCurvePublicKeyPKCS11:
             curve_class = _get_curve_class(bytes(ec_attrs[1]))
             if curve_class != None and ansiXY_bytes[0] == 4:
                 curve = curve_class()
-                self._public_key_buffer = (
-                    EllipticCurvePublicKey.from_encoded_point(
-                        curve, ansiXY_bytes
-                    )
+                public_key_buffer = EllipticCurvePublicKey.from_encoded_point(
+                    curve, ansiXY_bytes
                 )
-        return self._public_key_buffer
+                return public_key_buffer
+            else:
+                raise Exception("Could not get curve class")
+        else:
+            raise Exception("Session to card missing")
 
     # cryptography API
     @property
@@ -187,15 +188,15 @@ class EllipticCurvePublicKeyPKCS11:
                 self._operations["VERIFY"], signature_algorithm
             )
             sig_ec = decode_dss_signature(signature)
-            signature = _encode_RS_signature(sig_ec, self.key_size)
-            if signature is None:
+            sig_val = _encode_RS_signature(sig_ec, self.key_size)
+            if sig_val is None:
                 raise InvalidSignature("Signature could not be verified.")
             rez = False
             if PK_me is None:
-                rez = self._session.verify(self._public_key, data, signature)
+                rez = self._session.verify(self._public_key, data, sig_val)
             else:
                 rez = self._session.verify(
-                    self._public_key, data, signature, PK_me
+                    self._public_key, data, sig_val, PK_me
                 )
             if not rez:
                 raise InvalidSignature("Signature verification failed.")
