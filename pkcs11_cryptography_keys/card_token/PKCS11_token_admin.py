@@ -1,5 +1,6 @@
 import PyKCS11
 from asn1crypto.keys import ECDomainParameters, NamedCurve
+from asn1crypto.core import UTF8String
 
 
 # Token representation
@@ -132,8 +133,9 @@ class PKCS11TokenAdmin:
         return ret
 
     # Write certificate to the card
-    def write_certificate(self, subject: str, cert: str):
+    def write_certificate(self, subject: str, cert: bytes):
         ret = False
+        sub = UTF8String(subject)
         if self._session is not None:
             cert_template = [
                 (PyKCS11.CKA_CLASS, PyKCS11.CKO_CERTIFICATE),
@@ -145,12 +147,12 @@ class PKCS11TokenAdmin:
                 (PyKCS11.CKA_VALUE, cert),  # must be BER-encoded
                 (
                     PyKCS11.CKA_SUBJECT,
-                    subject,
+                    bytes(sub),
                 ),  # must be set and DER, see Table 24, X.509 Certificate Object Attributes
                 (
                     PyKCS11.CKA_ID,
                     self._keyid,
-                ),  # must be set, and DER see Table 24, X.509 Certificate Object Attributes
+                ),  # must be set,
             ]
             # create the certificate object
             self._session.createObject(cert_template)
