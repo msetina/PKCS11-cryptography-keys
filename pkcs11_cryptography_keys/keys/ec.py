@@ -22,6 +22,7 @@ from cryptography.hazmat.primitives.asymmetric.ec import (
 from cryptography.hazmat.primitives.asymmetric.utils import (
     Prehashed,
     encode_dss_signature,
+    decode_dss_signature,
 )
 from cryptography.hazmat.primitives.serialization import (
     Encoding,
@@ -88,7 +89,7 @@ def _get_PKSC11_mechanism(operation_dict, algorithm):
 
 
 # ECDSA signtures come from the card RS encoded, for transformation we need separate r and s
-def _decode_RS_signature(data):
+def _decode_RS_signature(data) -> tuple:
     l = len(data) / 2
     r = bytearray()
     s = bytearray()
@@ -100,12 +101,24 @@ def _decode_RS_signature(data):
     return r, s
 
 
+def _encode_RS_signature(r_s: tuple, key_size: int) -> bytes | None:
+    l = int(key_size / 8)
+    signature = None
+    try:
+        signature = int(r_s[0]).to_bytes(l, "big") + int(r_s[1]).to_bytes(
+            l, "big"
+        )
+    except Exception as e:
+        pass
+    return signature
+
+
 class EllipticCurvePublicKeyPKCS11:
     def __init__(self, session, public_key, operations: dict):
         self._session = session
         self._public_key = public_key
         self._operations = operations
-        self._public_key_buffer: EllipticCurvePublicKey
+        self._public_key_buffer: EllipticCurvePublicKey | None = None
 
     def _read_public_key_data(self) -> EllipticCurvePublicKey:
         if self._session is not None and self._public_key_buffer is None:
@@ -173,6 +186,10 @@ class EllipticCurvePublicKeyPKCS11:
             PK_me = _get_PKSC11_mechanism(
                 self._operations["VERIFY"], signature_algorithm
             )
+            sig_ec = decode_dss_signature(signature)
+            signature = _encode_RS_signature(sig_ec, self.key_size)
+            if signature is None:
+                raise InvalidSignature("Signature could not be verified.")
             rez = False
             if PK_me is None:
                 rez = self._session.verify(self._public_key, data, signature)
