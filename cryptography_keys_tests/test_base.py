@@ -11,6 +11,27 @@ class TestBasic:
             cnt = cnt + 1
         assert cnt == 1
 
+    def test_change_pin(self):
+        from pkcs11_cryptography_keys import (
+            list_token_labels,
+            PKCS11SlotAdminSession,
+        )
+
+        for label in list_token_labels(_pkcs11lib):
+            sa_session = PKCS11SlotAdminSession(_pkcs11lib, label, "1234", True)
+            with sa_session as slot:
+                slot.change_pin("1234", "5432")
+            sa_session = PKCS11SlotAdminSession(_pkcs11lib, label, "5432", True)
+            with sa_session as slot:
+                slot.change_pin("5432", "1234")
+            sa_session = PKCS11SlotAdminSession(_pkcs11lib, label, "123456")
+            with sa_session as slot:
+                slot.change_pin("123456", "222222")
+            sa_session = PKCS11SlotAdminSession(_pkcs11lib, label, "222222")
+            with sa_session as slot:
+                slot.change_pin("222222", "123456")
+        assert True
+
     def test_rsa_key_creation(self):
         from pkcs11_cryptography_keys import list_token_admins
 
