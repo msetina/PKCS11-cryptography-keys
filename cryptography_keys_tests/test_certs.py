@@ -1,7 +1,7 @@
 _pkcs11lib = "/usr/lib/softhsm/libsofthsm2.so"
 
 
-class TestBasic:
+class TestCertificates:
 
     def test_create_cert(self):
 
