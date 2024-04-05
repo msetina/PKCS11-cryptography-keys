@@ -7,8 +7,15 @@ from .PKCS11_slot_session import PKCS11SlotSession
 
 # contextmanager to facilitate connecting to source
 class PKCS11SlotAdminSession(PKCS11SlotSession):
-    def __init__(self, pksc11_lib: str, token_label: str, pin: str):
+    def __init__(
+        self,
+        pksc11_lib: str,
+        token_label: str,
+        pin: str,
+        norm_user: bool = False,
+    ):
         super().__init__(pksc11_lib, token_label, pin)
+        self._norm_user = norm_user
 
     # Open session with the card
     # Uses pin if needed, reads permited operations(mechanisms)
@@ -33,5 +40,8 @@ class PKCS11SlotAdminSession(PKCS11SlotSession):
             )
             if self._session is not None:
                 if self._login_required:
-                    self._session.login(self._pin, PyKCS11.CKU_SO)
+                    if self._norm_user:
+                        self._session.login(self._pin)
+                    else:
+                        self._session.login(self._pin, PyKCS11.CKU_SO)
                 return PKCS11SlotAdmin(self._session)
