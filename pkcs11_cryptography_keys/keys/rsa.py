@@ -367,7 +367,7 @@ class RSAPrivateKeyPKCS11(PKCS11Token):
                 )
             else:
                 raise Exception(
-                    "Public key with id {0} not found".format(self._keyid)
+                    "Public key with id {0!r} not found".format(self._keyid)
                 )
 
         else:
