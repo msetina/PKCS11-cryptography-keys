@@ -354,13 +354,22 @@ class RSAPrivateKeyPKCS11(PKCS11Token):
 
     def public_key(self) -> RSAPublicKeyPKCS11:
         if self._session is not None:
-            pubkey = self._session.findObjects(
+            pubkey_o = self._session.findObjects(
                 [
                     (PyKCS11.CKA_CLASS, PyKCS11.CKO_PUBLIC_KEY),
                     (PyKCS11.CKA_ID, self._keyid),
                 ]
-            )[0]
-            return RSAPublicKeyPKCS11(self._session, pubkey, self._operations)
+            )
+            if len(pubkey_o) > 0:
+                pubkey = pubkey_o[0]
+                return RSAPublicKeyPKCS11(
+                    self._session, pubkey, self._operations
+                )
+            else:
+                raise Exception(
+                    "Public key with id {0} not found".format(self._keyid)
+                )
+
         else:
             raise Exception("Session to card missing")
 
