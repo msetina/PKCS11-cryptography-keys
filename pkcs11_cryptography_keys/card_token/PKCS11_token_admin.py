@@ -1,6 +1,6 @@
 import PyKCS11
-from asn1crypto.keys import ECDomainParameters, NamedCurve
 from asn1crypto.core import UTF8String
+from asn1crypto.keys import ECDomainParameters, NamedCurve
 
 
 # Token representation
