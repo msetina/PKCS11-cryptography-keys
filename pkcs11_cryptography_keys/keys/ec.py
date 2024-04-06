@@ -260,24 +260,28 @@ class EllipticCurvePrivateKeyPKCS11(PKCS11Token):
                 (PyKCS11.CKA_LABEL, "derivedECDHKey"),
                 (PyKCS11.CKA_ID, keyID),
             ]
+            derkey = None
+            try:
+                derived_key = self._session.deriveKey(
+                    self._private_key, template, mech
+                )
+                # :param baseKey: the base key handle
+                # :type baseKey: integer
+                # :param template: template for the unwrapped key
+                # :param mecha: the decrypt mechanism to be used
+                # :type mecha: :class:`Mechanism`
+                # :return: the unwrapped key object
+                # :rtype: integer
 
-            derived_key = self._session.deriveKey(
-                self._private_key, template, mech
-            )
-            # :param baseKey: the base key handle
-            # :type baseKey: integer
-            # :param template: template for the unwrapped key
-            # :param mecha: the decrypt mechanism to be used
-            # :type mecha: :class:`Mechanism`
-            # :return: the unwrapped key object
-            # :rtype: integer
-
-            # get bytes of the key
-            attributes = self._session.getAttributeValue(
-                derived_key, [PyKCS11.CKA_VALUE]
-            )
-            derkey = bytes(attributes[0])
-            self._session.destroyObject(derived_key)
+                # get bytes of the key
+                attributes = self._session.getAttributeValue(
+                    derived_key, [PyKCS11.CKA_VALUE]
+                )
+                derkey = bytes(attributes[0])
+            except:
+                raise
+            finally:
+                self._session.destroyObject(derived_key)
             return derkey
         else:
             raise Exception("Session to card missing")
