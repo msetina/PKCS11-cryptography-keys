@@ -295,8 +295,8 @@ RSAPublicKey.register(RSAPublicKeyPKCS11)
 
 
 class RSAPrivateKeyPKCS11(PKCS11Token):
-    def __init__(self, session, keyid, key_type, pk_ref):
-        super().__init__(session, keyid, key_type, pk_ref)
+    def __init__(self, session, keyid, pk_ref):
+        super().__init__(session, keyid, pk_ref)
 
     # Register mechanism to operation as card capability
     def _get_mechanism_translation(self, method, PKCS11_mechanism):
@@ -411,5 +411,5 @@ RSAPrivateKeyWithSerialization = RSAPrivateKeyPKCS11
 RSAPrivateKey.register(RSAPrivateKeyPKCS11)
 
 
-def get_key(session, keyid, key_type, pk_ref):
-    return RSAPrivateKeyPKCS11(session, keyid, key_type, pk_ref)
+def get_key(session, keyid, pk_ref):
+    return RSAPrivateKeyPKCS11(session, keyid, pk_ref)

@@ -9,13 +9,11 @@ from cryptography.hazmat.primitives import serialization
 
 # Token representation
 class PKCS11Token:
-    def __init__(self, session, keyid: bytes, key_type: int, pk_ref):
+    def __init__(self, session, keyid: bytes, pk_ref):
         # session for interacton with the card
         self._session = session
         # id of key read from private key
         self._keyid = keyid
-        # type of key
-        self._key_type = key_type
         # private key reference
         self._private_key = pk_ref
         # operations supported by the card

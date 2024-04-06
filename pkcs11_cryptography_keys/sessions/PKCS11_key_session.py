@@ -79,7 +79,6 @@ class PKCS11KeySession(PKCS11SlotSession):
                     private_key = module.get_key(
                         self._session,
                         keyid,
-                        key_type,
                         pk_ref,
                     )
                     mechanisms = library.getMechanismList(slot)
