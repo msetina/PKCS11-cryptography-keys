@@ -37,9 +37,9 @@ class TestBasic:
 
         for admin in list_token_admins(_pkcs11lib, "1234", True):
             with admin as current_admin:
-                pub, priv = current_admin.create_rsa_key_pair(2048)
+                rsa_priv_key = current_admin.create_rsa_key_pair(2048)
                 r = current_admin.delete_key_pair()
-                assert pub is not None and priv is not None
+                assert rsa_priv_key is not None
                 assert r
 
     def test_ec_key_creation(self):
@@ -47,9 +47,9 @@ class TestBasic:
 
         for admin in list_token_admins(_pkcs11lib, "1234", True):
             with admin as current_admin:
-                pub, priv = current_admin.create_ec_key_pair("secp256r1")
+                ec_priv_key = current_admin.create_ec_key_pair("secp256r1")
                 r = current_admin.delete_key_pair()
-                assert pub is not None and priv is not None
+                assert ec_priv_key is not None
                 assert r
 
     def test_rsa_encryption_PKCS1v15(self):
@@ -64,8 +64,8 @@ class TestBasic:
         for label in list_token_labels(_pkcs11lib):
             a_session = PKCS11AdminSession(_pkcs11lib, label, "1234", True)
             with a_session as current_admin:
-                pub, priv = current_admin.create_rsa_key_pair(2048)
-            assert pub is not None and priv is not None
+                rsa_priv_key = current_admin.create_rsa_key_pair(2048)
+            assert rsa_priv_key is not None
             k_session = PKCS11KeySession(_pkcs11lib, label, "1234")
             with k_session as current_key:
                 public = current_key.public_key()
@@ -91,8 +91,8 @@ class TestBasic:
         for label in list_token_labels(_pkcs11lib):
             a_session = PKCS11AdminSession(_pkcs11lib, label, "1234", True)
             with a_session as current_admin:
-                pub, priv = current_admin.create_rsa_key_pair(2048)
-            assert pub is not None and priv is not None
+                rsa_priv_key = current_admin.create_rsa_key_pair(2048)
+            assert rsa_priv_key is not None
             k_session = PKCS11KeySession(_pkcs11lib, label, "1234")
             with k_session as current_key:
                 public = current_key.public_key()
@@ -125,8 +125,8 @@ class TestBasic:
         for label in list_token_labels(_pkcs11lib):
             a_session = PKCS11AdminSession(_pkcs11lib, label, "1234", True)
             with a_session as current_admin:
-                pub, priv = current_admin.create_ec_key_pair("secp256r1")
-            assert pub is not None and priv is not None
+                ec_priv_key = current_admin.create_ec_key_pair("secp256r1")
+            assert ec_priv_key is not None
             k_session = PKCS11KeySession(_pkcs11lib, label, "1234")
             with k_session as current_key:
                 public = current_key.public_key()

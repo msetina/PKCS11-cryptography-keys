@@ -2,6 +2,9 @@ import PyKCS11
 from asn1crypto.core import UTF8String
 from asn1crypto.keys import ECDomainParameters, NamedCurve
 
+from pkcs11_cryptography_keys.keys.ec import EllipticCurvePrivateKeyPKCS11
+from pkcs11_cryptography_keys.keys.rsa import RSAPrivateKeyPKCS11
+
 
 # Token representation
 class PKCS11TokenAdmin:
@@ -86,7 +89,7 @@ class PKCS11TokenAdmin:
                 private_template,
                 mecha=PyKCS11.MechanismRSAGENERATEKEYPAIR,
             )
-            ret = (pub_key, priv_key)
+            ret = RSAPrivateKeyPKCS11(self._session, self._keyid, priv_key)
         return ret
 
     # Create EC keypair on the card
@@ -120,6 +123,7 @@ class PKCS11TokenAdmin:
                 (PyKCS11.CKA_DECRYPT, PyKCS11.CK_TRUE),
                 (PyKCS11.CKA_SIGN, PyKCS11.CK_TRUE),
                 (PyKCS11.CKA_UNWRAP, PyKCS11.CK_TRUE),
+                (PyKCS11.CKA_DERIVE, PyKCS11.CK_TRUE),
                 (PyKCS11.CKA_LABEL, self._label),
                 (PyKCS11.CKA_ID, self._keyid),
             ]
@@ -129,7 +133,9 @@ class PKCS11TokenAdmin:
                 ec_priv_tmpl,
                 mecha=PyKCS11.MechanismECGENERATEKEYPAIR,
             )
-            ret = (pub_key, priv_key)
+            ret = EllipticCurvePrivateKeyPKCS11(
+                self._session, self._keyid, priv_key
+            )
         return ret
 
     # Write certificate to the card

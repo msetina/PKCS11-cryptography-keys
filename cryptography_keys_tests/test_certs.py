@@ -73,8 +73,8 @@ class TestCertificates:
                 _pkcs11lib, label, "1234", True, "sig_token", b"254"
             )
             with create_session as current_admin:
-                pub, priv = current_admin.create_rsa_key_pair(2048)
-                assert pub is not None and priv is not None
+                rsa_priv_key = current_admin.create_rsa_key_pair(2048)
+                assert rsa_priv_key is not None
 
             key_session = PKCS11KeySession(
                 _pkcs11lib, label, "1234", "sig_token"
