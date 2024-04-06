@@ -271,7 +271,7 @@ class EllipticCurvePrivateKeyPKCS11(PKCS11Token):
             # :type mecha: :class:`Mechanism`
             # :return: the unwrapped key object
             # :rtype: integer
-            print(derived_key)
+
             # get bytes of the key
             attributes = self._session.getAttributeValue(
                 derived_key, [PyKCS11.CKA_VALUE]
