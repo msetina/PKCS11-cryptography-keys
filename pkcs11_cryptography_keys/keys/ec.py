@@ -215,8 +215,8 @@ EllipticCurvePublicKey.register(EllipticCurvePublicKeyPKCS11)
 
 
 class EllipticCurvePrivateKeyPKCS11(PKCS11Token):
-    def __init__(self, session, keyid, key_type, pk_ref):
-        super().__init__(session, keyid, key_type, pk_ref)
+    def __init__(self, session, keyid, pk_ref):
+        super().__init__(session, keyid, pk_ref)
 
     # Register mechanism to operation as card capability
     def _get_mechanism_translation(self, method, PKCS11_mechanism):
@@ -232,6 +232,9 @@ class EllipticCurvePrivateKeyPKCS11(PKCS11Token):
         self, algorithm: ECDH, peer_public_key: EllipticCurvePublicKey
     ) -> bytes:
         if self._session is not None:
+            if peer_public_key.curve.key_size != self.curve.key_size:
+                raise Exception("Both keys need to be of curve and length")
+
             publicData = peer_public_key.public_bytes(
                 Encoding.X962,
                 PublicFormat.UncompressedPoint,
@@ -245,17 +248,16 @@ class EllipticCurvePrivateKeyPKCS11(PKCS11Token):
             keyID = (0x22,)
             template = [
                 (PyKCS11.CKA_CLASS, PyKCS11.CKO_SECRET_KEY),
-                (PyKCS11.CKA_KEY_TYPE, PyKCS11.CKK_AES),
+                (PyKCS11.CKA_KEY_TYPE, PyKCS11.CKK_GENERIC_SECRET),
                 (PyKCS11.CKA_TOKEN, PyKCS11.CK_FALSE),
-                (PyKCS11.CKA_SENSITIVE, PyKCS11.CK_TRUE),
+                (PyKCS11.CKA_SENSITIVE, PyKCS11.CK_FALSE),
                 (PyKCS11.CKA_PRIVATE, PyKCS11.CK_TRUE),
                 (PyKCS11.CKA_ENCRYPT, PyKCS11.CK_TRUE),
                 (PyKCS11.CKA_DECRYPT, PyKCS11.CK_TRUE),
                 (PyKCS11.CKA_SIGN, PyKCS11.CK_FALSE),
                 (PyKCS11.CKA_EXTRACTABLE, PyKCS11.CK_TRUE),
                 (PyKCS11.CKA_VERIFY, PyKCS11.CK_FALSE),
-                (PyKCS11.CKA_VALUE_LEN, 24),
-                (PyKCS11.CKA_LABEL, "derivedAESKey"),
+                (PyKCS11.CKA_LABEL, "derivedECDHKey"),
                 (PyKCS11.CKA_ID, keyID),
             ]
 
@@ -269,7 +271,7 @@ class EllipticCurvePrivateKeyPKCS11(PKCS11Token):
             # :type mecha: :class:`Mechanism`
             # :return: the unwrapped key object
             # :rtype: integer
-
+            print(derived_key)
             # get bytes of the key
             attributes = self._session.getAttributeValue(
                 derived_key, [PyKCS11.CKA_VALUE]
@@ -366,5 +368,5 @@ EllipticCurvePrivateKeyWithSerialization = EllipticCurvePrivateKeyPKCS11
 EllipticCurvePrivateKey.register(EllipticCurvePrivateKeyPKCS11)
 
 
-def get_key(session, keyid, key_type, pk_ref):
-    return EllipticCurvePrivateKeyPKCS11(session, keyid, key_type, pk_ref)
+def get_key(session, keyid, pk_ref):
+    return EllipticCurvePrivateKeyPKCS11(session, keyid, pk_ref)
