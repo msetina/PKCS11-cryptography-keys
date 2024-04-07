@@ -61,3 +61,68 @@ class TestECKeyExchange:
             with create_session_2 as current_admin:
                 r = current_admin.delete_key_pair()
                 assert r
+
+    def test_simple_exchange(self):
+        from cryptography.hazmat.primitives.asymmetric.ec import (
+            ECDH,
+            generate_private_key,
+            SECP384R1,
+        )
+        from cryptography.hazmat.primitives.kdf.hkdf import HKDF
+        from cryptography.hazmat.primitives import hashes
+        from pkcs11_cryptography_keys import (
+            PKCS11AdminSession,
+            PKCS11KeySession,
+        )
+        from pkcs11_cryptography_keys import list_token_labels
+
+        # Generate a private key for use in the exchange.
+        for label in list_token_labels(_pkcs11lib):
+            pub_key_obj_1 = None
+            create_session_1 = PKCS11AdminSession(
+                _pkcs11lib, label, "1234", True, "ec_token_1", b"254"
+            )
+            with create_session_1 as current_admin:
+                ec_private_key_1 = current_admin.create_ec_key_pair("secp384r1")
+                assert ec_private_key_1 is not None
+                pub_key_1 = ec_private_key_1.public_key()
+                pub_key_obj_1 = pub_key_1.public_numbers().public_key()
+
+            peer_private_key = generate_private_key(SECP384R1())
+
+            if pub_key_obj_1 is not None and peer_private_key is not None:
+                derived_key = None
+                same_derived_key = None
+                private_1_ses = PKCS11KeySession(
+                    _pkcs11lib, label, "1234", "ec_token_1"
+                )
+                with private_1_ses as curr_key:
+                    ex_key_1 = curr_key.exchange(
+                        ECDH(), peer_private_key.public_key()
+                    )
+                    assert ex_key_1 is not None
+
+                    # Perform key derivation.
+                    derived_key = HKDF(
+                        algorithm=hashes.SHA256(),
+                        length=32,
+                        salt=None,
+                        info=b"handshake data",
+                    ).derive(ex_key_1)
+                # And now we can demonstrate that the handshake performed in the
+                # opposite direction gives the same final value
+                same_shared_key = peer_private_key.exchange(
+                    ECDH(), pub_key_obj_1
+                )
+                # Perform key derivation.
+                same_derived_key = HKDF(
+                    algorithm=hashes.SHA256(),
+                    length=32,
+                    salt=None,
+                    info=b"handshake data",
+                ).derive(same_shared_key)
+                assert derived_key == same_derived_key
+
+            with create_session_1 as current_admin:
+                r = current_admin.delete_key_pair()
+                assert r
