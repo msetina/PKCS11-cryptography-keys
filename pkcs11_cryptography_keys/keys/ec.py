@@ -88,6 +88,22 @@ def _get_PKSC11_mechanism(operation_dict, algorithm):
     return PK_me
 
 
+def _get_PKSC11_mechanism_D(
+    operation_dict, algorithm, publicData, kdf=1, sharedData=None
+):
+    PK_me = None
+    cls = algorithm.__class__
+    if cls in operation_dict:
+        if cls == ECDH:
+            # :param publicData: Other party public key which is EC Point [PC || coord-x || coord-y]. 04 || x || y
+            # :param kdf: Key derivation function. OPTIONAL. Defaults to CKD_NULL
+            # :param sharedData: additional shared data. OPTIONAL
+            PK_me = PyKCS11.ECDH1_DERIVE_Mechanism(
+                publicData, kdf=kdf, sharedData=sharedData
+            )
+    return PK_me
+
+
 # ECDSA signtures come from the card RS encoded, for transformation we need separate r and s
 def _decode_RS_signature(data) -> tuple:
     l = len(data) / 2
@@ -232,57 +248,62 @@ class EllipticCurvePrivateKeyPKCS11(PKCS11Token):
         self, algorithm: ECDH, peer_public_key: EllipticCurvePublicKey
     ) -> bytes:
         if self._session is not None:
-            if peer_public_key.curve.key_size != self.curve.key_size:
-                raise Exception("Both keys need to be of curve and length")
-
             publicData = peer_public_key.public_bytes(
                 Encoding.X962,
                 PublicFormat.UncompressedPoint,
             )
-            # :param publicData: Other party public key which is EC Point [PC || coord-x || coord-y]. 04 || x || y
-            # :param kdf: Key derivation function. OPTIONAL. Defaults to CKD_NULL
-            # :param sharedData: additional shared data. OPTIONAL
-            mech = PyKCS11.ECDH1_DERIVE_Mechanism(
-                publicData, kdf=1, sharedData=None
+            PK_me = _get_PKSC11_mechanism_D(
+                self._operations["DERIVE"], algorithm, publicData
             )
-            keyID = (0x22,)
-            template = [
-                (PyKCS11.CKA_CLASS, PyKCS11.CKO_SECRET_KEY),
-                (PyKCS11.CKA_KEY_TYPE, PyKCS11.CKK_GENERIC_SECRET),
-                (PyKCS11.CKA_TOKEN, PyKCS11.CK_FALSE),
-                (PyKCS11.CKA_SENSITIVE, PyKCS11.CK_FALSE),
-                (PyKCS11.CKA_PRIVATE, PyKCS11.CK_TRUE),
-                (PyKCS11.CKA_ENCRYPT, PyKCS11.CK_TRUE),
-                (PyKCS11.CKA_DECRYPT, PyKCS11.CK_TRUE),
-                (PyKCS11.CKA_SIGN, PyKCS11.CK_FALSE),
-                (PyKCS11.CKA_EXTRACTABLE, PyKCS11.CK_TRUE),
-                (PyKCS11.CKA_VERIFY, PyKCS11.CK_FALSE),
-                (PyKCS11.CKA_LABEL, "derivedECDHKey"),
-                (PyKCS11.CKA_ID, keyID),
-            ]
-            derkey = None
-            try:
-                derived_key = self._session.deriveKey(
-                    self._private_key, template, mech
+            if PK_me is None:
+                raise UnsupportedAlgorithm(
+                    "Derive algorithm {0} not supported.".format(algorithm)
                 )
-                # :param baseKey: the base key handle
-                # :type baseKey: integer
-                # :param template: template for the unwrapped key
-                # :param mecha: the decrypt mechanism to be used
-                # :type mecha: :class:`Mechanism`
-                # :return: the unwrapped key object
-                # :rtype: integer
+            else:
+                if (
+                    peer_public_key.curve.key_size != self.curve.key_size
+                    and peer_public_key.curve.name != self.curve.name
+                ):
+                    raise Exception("Both keys need to be of curve and length")
 
-                # get bytes of the key
-                attributes = self._session.getAttributeValue(
-                    derived_key, [PyKCS11.CKA_VALUE]
-                )
-                derkey = bytes(attributes[0])
-            except:
-                raise
-            finally:
-                self._session.destroyObject(derived_key)
-            return derkey
+                keyID = (0x22,)
+                template = [
+                    (PyKCS11.CKA_CLASS, PyKCS11.CKO_SECRET_KEY),
+                    (PyKCS11.CKA_KEY_TYPE, PyKCS11.CKK_GENERIC_SECRET),
+                    (PyKCS11.CKA_TOKEN, PyKCS11.CK_FALSE),
+                    (PyKCS11.CKA_SENSITIVE, PyKCS11.CK_FALSE),
+                    (PyKCS11.CKA_PRIVATE, PyKCS11.CK_TRUE),
+                    (PyKCS11.CKA_ENCRYPT, PyKCS11.CK_TRUE),
+                    (PyKCS11.CKA_DECRYPT, PyKCS11.CK_TRUE),
+                    (PyKCS11.CKA_SIGN, PyKCS11.CK_FALSE),
+                    (PyKCS11.CKA_EXTRACTABLE, PyKCS11.CK_TRUE),
+                    (PyKCS11.CKA_VERIFY, PyKCS11.CK_FALSE),
+                    (PyKCS11.CKA_LABEL, "derivedECDHKey"),
+                    (PyKCS11.CKA_ID, keyID),
+                ]
+                derkey = None
+                try:
+                    derived_key = self._session.deriveKey(
+                        self._private_key, template, PK_me
+                    )
+                    # :param baseKey: the base key handle
+                    # :type baseKey: integer
+                    # :param template: template for the unwrapped key
+                    # :param mecha: the decrypt mechanism to be used
+                    # :type mecha: :class:`Mechanism`
+                    # :return: the unwrapped key object
+                    # :rtype: integer
+
+                    # get bytes of the key
+                    attributes = self._session.getAttributeValue(
+                        derived_key, [PyKCS11.CKA_VALUE]
+                    )
+                    derkey = bytes(attributes[0])
+                except:
+                    raise
+                finally:
+                    self._session.destroyObject(derived_key)
+                return derkey
         else:
             raise Exception("Session to card missing")
 
