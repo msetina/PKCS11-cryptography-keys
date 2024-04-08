@@ -78,7 +78,81 @@ class TestBasic:
                 r = current_admin.delete_key_pair()
                 assert r
 
-    def test_rsa_sign_verify(self):
+    # softHSM does not have PSS support for encryption
+    # def test_rsa_encryption_PSS(self):
+    #     from pkcs11_cryptography_keys import (
+    #         list_token_labels,
+    #         PKCS11AdminSession,
+    #         PKCS11KeySession,
+    #     )
+    #     from cryptography.hazmat.primitives import hashes
+    #     from cryptography.hazmat.primitives.asymmetric import padding
+
+    #     message = b"encrypted data"
+    #     for label in list_token_labels(_pkcs11lib):
+    #         a_session = PKCS11AdminSession(_pkcs11lib, label, "1234", True)
+    #         with a_session as current_admin:
+    #             rsa_priv_key = current_admin.create_rsa_key_pair(2048)
+    #         assert rsa_priv_key is not None
+    #         k_session = PKCS11KeySession(_pkcs11lib, label, "1234")
+    #         with k_session as current_key:
+    #             public_key = current_key.public_key()
+    #             hash1 = hashes.SHA256()
+    #             padding1 = padding.PSS(
+    #                 mgf=padding.MGF1(hash1),
+    #                 salt_length=padding.PSS.MAX_LENGTH,
+    #             )
+    #             ciphertext = public_key.encrypt(
+    #                 message,
+    #                 padding1,
+    #             )
+    #             plaintext = current_key.decrypt(
+    #                 ciphertext,
+    #                 padding1,
+    #             )
+    #             assert plaintext == message
+    #         with a_session as current_admin:
+    #             r = current_admin.delete_key_pair()
+    #             assert r
+
+    def test_rsa_encryption_OAEP(self):
+        from pkcs11_cryptography_keys import (
+            list_token_labels,
+            PKCS11AdminSession,
+            PKCS11KeySession,
+        )
+        from cryptography.hazmat.primitives import hashes
+        from cryptography.hazmat.primitives.asymmetric import padding
+
+        message = b"encrypted data"
+        for label in list_token_labels(_pkcs11lib):
+            a_session = PKCS11AdminSession(_pkcs11lib, label, "1234", True)
+            with a_session as current_admin:
+                rsa_priv_key = current_admin.create_rsa_key_pair(2048)
+            assert rsa_priv_key is not None
+            k_session = PKCS11KeySession(_pkcs11lib, label, "1234")
+            with k_session as current_key:
+                public_key = current_key.public_key()
+                # SoftHSM supports just SHA1 in this case
+                padding1 = padding.OAEP(
+                    mgf=padding.MGF1(algorithm=hashes.SHA1()),
+                    algorithm=hashes.SHA1(),
+                    label=None,
+                )
+                ciphertext = public_key.encrypt(
+                    message,
+                    padding1,
+                )
+                plaintext = current_key.decrypt(
+                    ciphertext,
+                    padding1,
+                )
+                assert plaintext == message
+            with a_session as current_admin:
+                r = current_admin.delete_key_pair()
+                assert r
+
+    def test_rsa_sign_verify_PKCS1(self):
         from pkcs11_cryptography_keys import (
             list_token_labels,
             PKCS11AdminSession,
@@ -96,10 +170,49 @@ class TestBasic:
             k_session = PKCS11KeySession(_pkcs11lib, label, "1234")
             with k_session as current_key:
                 public = current_key.public_key()
+                hash1 = hashes.SHA256()
                 padding1 = padding.PKCS1v15()
-                signature = current_key.sign(data, padding1, hashes.SHA256())
-                rezult = public.verify(
-                    signature, data, padding1, hashes.SHA256()
+                signature = current_key.sign(data, padding1, hash1)
+                rezult = public.verify(signature, data, padding1, hash1)
+                assert rezult is None
+            with a_session as current_admin:
+                r = current_admin.delete_key_pair()
+                assert r
+
+    def test_rsa_sign_verify_PSS(self):
+        from pkcs11_cryptography_keys import (
+            list_token_labels,
+            PKCS11AdminSession,
+            PKCS11KeySession,
+        )
+        from cryptography.hazmat.primitives import hashes
+        from cryptography.hazmat.primitives.asymmetric import padding
+
+        message = b"A message I want to sign"
+        for label in list_token_labels(_pkcs11lib):
+            a_session = PKCS11AdminSession(_pkcs11lib, label, "1234", True)
+            with a_session as current_admin:
+                rsa_priv_key = current_admin.create_rsa_key_pair(2048)
+            assert rsa_priv_key is not None
+            k_session = PKCS11KeySession(_pkcs11lib, label, "1234")
+            with k_session as current_key:
+                hash1 = hashes.SHA256()
+                padding1 = padding.PSS(
+                    mgf=padding.MGF1(hash1),
+                    salt_length=padding.PSS.MAX_LENGTH,
+                )
+
+                signature = current_key.sign(
+                    message,
+                    padding1,
+                    hash1,
+                )
+                public_key = current_key.public_key()
+                rezult = public_key.verify(
+                    signature,
+                    message,
+                    padding1,
+                    hash1,
                 )
                 assert rezult is None
             with a_session as current_admin:
