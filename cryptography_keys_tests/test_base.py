@@ -179,7 +179,47 @@ class TestBasic:
                 r = current_admin.delete_key_pair()
                 assert r
 
-    def test_rsa_sign_verify_PSS(self):
+    def test_rsa_sign_verify_PSS_digest_length(self):
+        from pkcs11_cryptography_keys import (
+            list_token_labels,
+            PKCS11AdminSession,
+            PKCS11KeySession,
+        )
+        from cryptography.hazmat.primitives import hashes
+        from cryptography.hazmat.primitives.asymmetric import padding
+
+        message = b"A message I want to sign"
+        for label in list_token_labels(_pkcs11lib):
+            a_session = PKCS11AdminSession(_pkcs11lib, label, "1234", True)
+            with a_session as current_admin:
+                rsa_priv_key = current_admin.create_rsa_key_pair(2048)
+            assert rsa_priv_key is not None
+            k_session = PKCS11KeySession(_pkcs11lib, label, "1234")
+            with k_session as current_key:
+                hash1 = hashes.SHA256()
+                padding1 = padding.PSS(
+                    mgf=padding.MGF1(hash1),
+                    salt_length=padding.PSS.DIGEST_LENGTH,
+                )
+
+                signature = current_key.sign(
+                    message,
+                    padding1,
+                    hash1,
+                )
+                public_key = current_key.public_key()
+                rezult = public_key.verify(
+                    signature,
+                    message,
+                    padding1,
+                    hash1,
+                )
+                assert rezult is None
+            with a_session as current_admin:
+                r = current_admin.delete_key_pair()
+                assert r
+
+    def test_rsa_sign_verify_PSS_max_length(self):
         from pkcs11_cryptography_keys import (
             list_token_labels,
             PKCS11AdminSession,
@@ -215,6 +255,82 @@ class TestBasic:
                     hash1,
                 )
                 assert rezult is None
+            with a_session as current_admin:
+                r = current_admin.delete_key_pair()
+                assert r
+
+    def test_rsa_sign_verify_PSS_message_length(self):
+        from pkcs11_cryptography_keys import (
+            list_token_labels,
+            PKCS11AdminSession,
+            PKCS11KeySession,
+        )
+        from cryptography.hazmat.primitives import hashes
+        from cryptography.hazmat.primitives.asymmetric import padding
+
+        message = b"A message I want to sign"
+        for label in list_token_labels(_pkcs11lib):
+            a_session = PKCS11AdminSession(_pkcs11lib, label, "1234", True)
+            with a_session as current_admin:
+                rsa_priv_key = current_admin.create_rsa_key_pair(2048)
+            assert rsa_priv_key is not None
+            k_session = PKCS11KeySession(_pkcs11lib, label, "1234")
+            with k_session as current_key:
+                hash1 = hashes.SHA256()
+                padding1 = padding.PSS(
+                    mgf=padding.MGF1(hash1),
+                    salt_length=len(message),
+                )
+
+                signature = current_key.sign(
+                    message,
+                    padding1,
+                    hash1,
+                )
+                public_key = current_key.public_key()
+                rezult = public_key.verify(
+                    signature,
+                    message,
+                    padding1,
+                    hash1,
+                )
+                assert rezult is None
+            with a_session as current_admin:
+                r = current_admin.delete_key_pair()
+                assert r
+
+    def test_rsa_sign_verify_PSS_auto(self):
+        from pkcs11_cryptography_keys import (
+            list_token_labels,
+            PKCS11AdminSession,
+            PKCS11KeySession,
+        )
+        from cryptography.hazmat.primitives import hashes
+        from cryptography.hazmat.primitives.asymmetric import padding
+        from cryptography.exceptions import UnsupportedAlgorithm
+        import pytest
+
+        message = b"A message I want to sign"
+        for label in list_token_labels(_pkcs11lib):
+            a_session = PKCS11AdminSession(_pkcs11lib, label, "1234", True)
+            with a_session as current_admin:
+                rsa_priv_key = current_admin.create_rsa_key_pair(2048)
+            assert rsa_priv_key is not None
+            k_session = PKCS11KeySession(_pkcs11lib, label, "1234")
+            with k_session as current_key:
+                hash1 = hashes.SHA256()
+                padding1 = padding.PSS(
+                    mgf=padding.MGF1(hash1),
+                    salt_length=padding.PSS.AUTO,
+                )
+                with pytest.raises(UnsupportedAlgorithm) as excinfo:
+                    signature = current_key.sign(
+                        message,
+                        padding1,
+                        hash1,
+                    )
+                    assert excinfo.group_contains(UnsupportedAlgorithm)
+
             with a_session as current_admin:
                 r = current_admin.delete_key_pair()
                 assert r
