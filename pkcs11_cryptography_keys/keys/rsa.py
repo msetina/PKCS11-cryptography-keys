@@ -135,17 +135,15 @@ _salt_length = {
 }
 
 
-def _get_salt_length_int(hash, salt_length_val):
+def _get_salt_length_int(hash, padding):
     ret = 0
-    cls = salt_length_val.__class__.__name__
-    print(cls)
-    if isinstance(salt_length_val, int):
-        ret = salt_length_val
-    elif cls == "_DigestLength":
+    if isinstance(padding._salt_length, int):
+        ret = padding._salt_length
+    elif padding._salt_length is padding.DIGEST_LENGTH:
         ret = _salt_length[hash]
-    elif cls == "_Auto":
+    elif padding._salt_length is padding.AUTO:
         raise UnsupportedAlgorithm("AUTO is not supported")
-    elif cls == "_MaxLength":
+    elif padding._salt_length is padding.MAX_LENGTH:
         ret = 0
     return ret
 
@@ -163,7 +161,7 @@ def _get_PKSC11_mechanism_SV(operation_dict, algorithm, padding, digest_dict):
             mc = padding.mgf._algorithm.__class__
             mgf = mgf_methods[mc]
             hash = digest_dict[mc]
-            salt = _get_salt_length_int(mc, padding._salt_length)
+            salt = _get_salt_length_int(mc, padding)
             PK_me = PyKCS11.RSA_PSS_Mechanism(
                 mech,
                 hash,
@@ -190,7 +188,7 @@ def _get_PKSC11_mechanism_ED(operation_dict, padding, digest_dict):
             mgf = mgf_methods[mc]
             hash = digest_dict[mc]
             mech = operation_dict[pcls]
-            salt = _get_salt_length_int(mc, padding._salt_length)
+            salt = _get_salt_length_int(mc, padding)
             PK_me = PyKCS11.RSA_PSS_Mechanism(mech, hash, mgf, salt)
         if pcls == OAEP:
             mc = padding.mgf._algorithm.__class__
