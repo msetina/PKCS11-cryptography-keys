@@ -61,20 +61,21 @@ class PKCS11TokenAdmin:
             public_template = [
                 (PyKCS11.CKA_CLASS, PyKCS11.CKO_PUBLIC_KEY),
                 (PyKCS11.CKA_PRIVATE, PyKCS11.CK_FALSE),
+                (PyKCS11.CKA_KEY_TYPE, PyKCS11.CKK_RSA),
+                (PyKCS11.CKA_MODULUS_BITS, key_length),
                 (PyKCS11.CKA_TOKEN, PyKCS11.CK_TRUE),
                 (PyKCS11.CKA_ENCRYPT, PyKCS11.CK_TRUE),
                 (PyKCS11.CKA_VERIFY, PyKCS11.CK_TRUE),
                 (PyKCS11.CKA_WRAP, PyKCS11.CK_TRUE),
-                (PyKCS11.CKA_KEY_TYPE, PyKCS11.CKK_RSA),
                 (PyKCS11.CKA_VERIFY_RECOVER, PyKCS11.CK_TRUE),
                 (PyKCS11.CKA_LABEL, self._label),
-                (PyKCS11.CKA_MODULUS_BITS, key_length),
                 (PyKCS11.CKA_ID, self._keyid),
             ]
 
             private_template = [
                 (PyKCS11.CKA_CLASS, PyKCS11.CKO_PRIVATE_KEY),
                 (PyKCS11.CKA_PRIVATE, PyKCS11.CK_TRUE),
+                (PyKCS11.CKA_KEY_TYPE, PyKCS11.CKK_RSA),
                 (PyKCS11.CKA_TOKEN, PyKCS11.CK_TRUE),
                 (PyKCS11.CKA_SENSITIVE, PyKCS11.CK_TRUE),
                 (PyKCS11.CKA_DECRYPT, PyKCS11.CK_TRUE),
@@ -105,18 +106,19 @@ class PKCS11TokenAdmin:
             ec_public_tmpl = [
                 (PyKCS11.CKA_CLASS, PyKCS11.CKO_PUBLIC_KEY),
                 (PyKCS11.CKA_PRIVATE, PyKCS11.CK_FALSE),
+                (PyKCS11.CKA_KEY_TYPE, PyKCS11.CKK_ECDSA),
+                (PyKCS11.CKA_EC_PARAMS, ec_params),
                 (PyKCS11.CKA_TOKEN, PyKCS11.CK_TRUE),
                 (PyKCS11.CKA_ENCRYPT, PyKCS11.CK_TRUE),
                 (PyKCS11.CKA_VERIFY, PyKCS11.CK_TRUE),
                 (PyKCS11.CKA_WRAP, PyKCS11.CK_TRUE),
-                (PyKCS11.CKA_KEY_TYPE, PyKCS11.CKK_ECDSA),
-                (PyKCS11.CKA_EC_PARAMS, ec_params),
                 (PyKCS11.CKA_LABEL, self._label),
                 (PyKCS11.CKA_ID, self._keyid),
             ]
 
             ec_priv_tmpl = [
                 (PyKCS11.CKA_CLASS, PyKCS11.CKO_PRIVATE_KEY),
+                (PyKCS11.CKA_PRIVATE, PyKCS11.CK_TRUE),
                 (PyKCS11.CKA_KEY_TYPE, PyKCS11.CKK_ECDSA),
                 (PyKCS11.CKA_TOKEN, PyKCS11.CK_TRUE),
                 (PyKCS11.CKA_SENSITIVE, PyKCS11.CK_TRUE),
