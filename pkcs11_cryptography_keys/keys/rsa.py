@@ -126,9 +126,16 @@ mgf_methods = {
     # hashes.SHA3_512: PyKCS11.CKG_MGF1_SHA3_512,
 }
 
+salt_length = {
+    hashes.SHA1: 20,
+    hashes.SHA224: 28,
+    hashes.SHA256: 32,
+    hashes.SHA384: 48,
+    hashes.SHA512: 64,
+}
+
+
 # Get PKCS11 mechanism from hashing algorithm and padding information for sign/verify
-
-
 def _get_PKSC11_mechanism_SV(operation_dict, algorithm, padding, digest_dict):
     PK_me = None
     cls = algorithm.__class__
@@ -138,19 +145,18 @@ def _get_PKSC11_mechanism_SV(operation_dict, algorithm, padding, digest_dict):
         if pcls == PKCS1v15:
             PK_me = PyKCS11.Mechanism(mech)
         if pcls == PSS:
-            mc = padding.mgf.__class__
+            mc = padding.mgf._algorithm.__class__
             mgf = mgf_methods[mc]
             hash = digest_dict[mc]  # ?????
-            mech = PyKCS11.Mechanism(operation_dict["pad"][pcls])
+            salt = salt_length[mc]
             PK_me = PyKCS11.RSA_PSS_Mechanism(
-                mech, hash, mgf, padding._salt_length
+                mech,
+                hash,
+                mgf,
+                salt,
             )
         if pcls == OAEP:
-            mc = padding.mgf._algorithm.__class__
-            hc = padding.algorithm.__class__
-            hash = digest_dict[hc]
-            mgf = mgf_methods[mc]
-            PK_me = PyKCS11.RSAOAEPMechanism(hash, mgf)
+            raise Exception("OAEP is not supported for signing")
     return PK_me
 
 
@@ -164,13 +170,13 @@ def _get_PKSC11_mechanism_ED(operation_dict, padding, digest_dict):
         if pcls == PKCS1v15:
             PK_me = PyKCS11.MechanismRSAPKCS1
         if pcls == PSS:
-            mc = padding.mgf.__class__
+            mc = padding.mgf._algorithm.__class__
+            padding.mgf
             mgf = mgf_methods[mc]
             hash = digest_dict[mc]  # ?????
-            mech = PyKCS11.Mechanism(operation_dict[pcls])
-            PK_me = PyKCS11.RSA_PSS_Mechanism(
-                mech, hash, mgf, padding._salt_length
-            )
+            mech = operation_dict[pcls]
+            salt = salt_length[mc]
+            PK_me = PyKCS11.RSA_PSS_Mechanism(mech, hash, mgf, salt)
         if pcls == OAEP:
             mc = padding.mgf._algorithm.__class__
             hc = padding.algorithm.__class__
