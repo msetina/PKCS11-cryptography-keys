@@ -15,9 +15,6 @@ from cryptography.hazmat.primitives.asymmetric.padding import (
     OAEP,
     PSS,
     PKCS1v15,
-    _MaxLength,
-    _Auto,
-    _DigestLength,
 )
 from cryptography.hazmat.primitives.asymmetric.rsa import (
     RSAPrivateKey,
@@ -140,13 +137,15 @@ _salt_length = {
 
 def _get_salt_length_int(hash, salt_length_val):
     ret = 0
+    cls = salt_length_val.__class__.__name__
+    print(cls)
     if isinstance(salt_length_val, int):
         ret = salt_length_val
-    elif isinstance(salt_length_val, _DigestLength):
+    elif cls == "_DigestLength":
         ret = _salt_length[hash]
-    elif isinstance(salt_length_val, _Auto):
+    elif cls == "_Auto":
         raise UnsupportedAlgorithm("AUTO is not supported")
-    elif isinstance(salt_length_val, _MaxLength):
+    elif cls == "_MaxLength":
         ret = 0
     return ret
 
