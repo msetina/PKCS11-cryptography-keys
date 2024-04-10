@@ -37,17 +37,47 @@ class TestBasic:
 
         for admin in list_token_admins(_pkcs11lib, "1234", True):
             with admin as current_admin:
-                rsa_priv_key = current_admin.create_rsa_key_pair(2048)
-                r = current_admin.delete_key_pair()
+                settings = {
+                    "key_type": "RSA",
+                    "RSA_length": 2048,
+                    "key_usage": {
+                        "crypt": True,
+                        "sign": True,
+                        "wrap": True,
+                        "recover": False,
+                    },
+                }
+                rsa_priv_key = current_admin.create_rsa_key_pair(settings)
                 assert rsa_priv_key is not None
+                assert rsa_priv_key.key_size == 2048
+                ku = rsa_priv_key.read_key_usage()
+                for ka, val in settings["key_usage"].items():
+                    assert ku[ka] == val
+                r = current_admin.delete_key_pair()
                 assert r
 
     def test_ec_key_creation(self):
         from pkcs11_cryptography_keys import list_token_admins
+        from cryptography.hazmat.primitives.asymmetric.ec import SECP384R1
 
         for admin in list_token_admins(_pkcs11lib, "1234", True):
             with admin as current_admin:
-                ec_priv_key = current_admin.create_ec_key_pair("secp256r1")
+                settings = {
+                    "key_type": "EC",
+                    "EC_curve": SECP384R1(),
+                    "key_usage": {
+                        "crypt": True,
+                        "sign": True,
+                        "wrap": True,
+                        "derive": True,
+                        "recover": False,
+                    },
+                }
+                ec_priv_key = current_admin.create_ec_key_pair(settings)
+                assert ec_priv_key.curve.__class__ is SECP384R1
+                ku = ec_priv_key.read_key_usage()
+                for ka, val in settings["key_usage"].items():
+                    assert ku[ka] == val
                 r = current_admin.delete_key_pair()
                 assert ec_priv_key is not None
                 assert r
@@ -64,7 +94,17 @@ class TestBasic:
         for label in list_token_labels(_pkcs11lib):
             a_session = PKCS11AdminSession(_pkcs11lib, label, "1234", True)
             with a_session as current_admin:
-                rsa_priv_key = current_admin.create_rsa_key_pair(2048)
+                settings = {
+                    "key_type": "RSA",
+                    "RSA_length": 2048,
+                    "key_usage": {
+                        "crypt": True,
+                        "sign": True,
+                        "wrap": True,
+                        "recover": True,
+                    },
+                }
+                rsa_priv_key = current_admin.create_rsa_key_pair(settings)
             assert rsa_priv_key is not None
             k_session = PKCS11KeySession(_pkcs11lib, label, "1234")
             with k_session as current_key:
@@ -92,7 +132,17 @@ class TestBasic:
     #     for label in list_token_labels(_pkcs11lib):
     #         a_session = PKCS11AdminSession(_pkcs11lib, label, "1234", True)
     #         with a_session as current_admin:
-    #             rsa_priv_key = current_admin.create_rsa_key_pair(2048)
+    #     settings = {
+    #     "key_type": "RSA",
+    #     "RSA_length": 2048,
+    #     "key_usage": {
+    #         "crypt": True,
+    #         "sign": True,
+    #         "wrap": True,
+    #         "recover": True,
+    #     },
+    # }
+    #             rsa_priv_key = current_admin.create_rsa_key_pair(settings)
     #         assert rsa_priv_key is not None
     #         k_session = PKCS11KeySession(_pkcs11lib, label, "1234")
     #         with k_session as current_key:
@@ -128,7 +178,17 @@ class TestBasic:
         for label in list_token_labels(_pkcs11lib):
             a_session = PKCS11AdminSession(_pkcs11lib, label, "1234", True)
             with a_session as current_admin:
-                rsa_priv_key = current_admin.create_rsa_key_pair(2048)
+                settings = {
+                    "key_type": "RSA",
+                    "RSA_length": 2048,
+                    "key_usage": {
+                        "crypt": True,
+                        "sign": True,
+                        "wrap": True,
+                        "recover": True,
+                    },
+                }
+                rsa_priv_key = current_admin.create_rsa_key_pair(settings)
             assert rsa_priv_key is not None
             k_session = PKCS11KeySession(_pkcs11lib, label, "1234")
             with k_session as current_key:
@@ -165,7 +225,17 @@ class TestBasic:
         for label in list_token_labels(_pkcs11lib):
             a_session = PKCS11AdminSession(_pkcs11lib, label, "1234", True)
             with a_session as current_admin:
-                rsa_priv_key = current_admin.create_rsa_key_pair(2048)
+                settings = {
+                    "key_type": "RSA",
+                    "RSA_length": 2048,
+                    "key_usage": {
+                        "crypt": True,
+                        "sign": True,
+                        "wrap": True,
+                        "recover": True,
+                    },
+                }
+                rsa_priv_key = current_admin.create_rsa_key_pair(settings)
             assert rsa_priv_key is not None
             k_session = PKCS11KeySession(_pkcs11lib, label, "1234")
             with k_session as current_key:
@@ -192,7 +262,17 @@ class TestBasic:
         for label in list_token_labels(_pkcs11lib):
             a_session = PKCS11AdminSession(_pkcs11lib, label, "1234", True)
             with a_session as current_admin:
-                rsa_priv_key = current_admin.create_rsa_key_pair(2048)
+                settings = {
+                    "key_type": "RSA",
+                    "RSA_length": 2048,
+                    "key_usage": {
+                        "crypt": True,
+                        "sign": True,
+                        "wrap": True,
+                        "recover": True,
+                    },
+                }
+                rsa_priv_key = current_admin.create_rsa_key_pair(settings)
             assert rsa_priv_key is not None
             k_session = PKCS11KeySession(_pkcs11lib, label, "1234")
             with k_session as current_key:
@@ -232,7 +312,17 @@ class TestBasic:
         for label in list_token_labels(_pkcs11lib):
             a_session = PKCS11AdminSession(_pkcs11lib, label, "1234", True)
             with a_session as current_admin:
-                rsa_priv_key = current_admin.create_rsa_key_pair(2048)
+                settings = {
+                    "key_type": "RSA",
+                    "RSA_length": 2048,
+                    "key_usage": {
+                        "crypt": True,
+                        "sign": True,
+                        "wrap": True,
+                        "recover": True,
+                    },
+                }
+                rsa_priv_key = current_admin.create_rsa_key_pair(settings)
             assert rsa_priv_key is not None
             k_session = PKCS11KeySession(_pkcs11lib, label, "1234")
             with k_session as current_key:
@@ -272,7 +362,17 @@ class TestBasic:
         for label in list_token_labels(_pkcs11lib):
             a_session = PKCS11AdminSession(_pkcs11lib, label, "1234", True)
             with a_session as current_admin:
-                rsa_priv_key = current_admin.create_rsa_key_pair(2048)
+                settings = {
+                    "key_type": "RSA",
+                    "RSA_length": 2048,
+                    "key_usage": {
+                        "crypt": True,
+                        "sign": True,
+                        "wrap": True,
+                        "recover": True,
+                    },
+                }
+                rsa_priv_key = current_admin.create_rsa_key_pair(settings)
             assert rsa_priv_key is not None
             k_session = PKCS11KeySession(_pkcs11lib, label, "1234")
             with k_session as current_key:
@@ -314,7 +414,17 @@ class TestBasic:
         for label in list_token_labels(_pkcs11lib):
             a_session = PKCS11AdminSession(_pkcs11lib, label, "1234", True)
             with a_session as current_admin:
-                rsa_priv_key = current_admin.create_rsa_key_pair(2048)
+                settings = {
+                    "key_type": "RSA",
+                    "RSA_length": 2048,
+                    "key_usage": {
+                        "crypt": True,
+                        "sign": True,
+                        "wrap": True,
+                        "recover": True,
+                    },
+                }
+                rsa_priv_key = current_admin.create_rsa_key_pair(settings)
             assert rsa_priv_key is not None
             k_session = PKCS11KeySession(_pkcs11lib, label, "1234")
             with k_session as current_key:
@@ -343,7 +453,10 @@ class TestBasic:
             PKCS11KeySession,
         )
         from cryptography.hazmat.primitives import hashes
-        from cryptography.hazmat.primitives.asymmetric.ec import ECDSA
+        from cryptography.hazmat.primitives.asymmetric.ec import (
+            ECDSA,
+            SECP384R1,
+        )
         from cryptography.hazmat.primitives.asymmetric import utils
 
         data = b"How to encode this sentence"
@@ -354,7 +467,18 @@ class TestBasic:
         for label in list_token_labels(_pkcs11lib):
             a_session = PKCS11AdminSession(_pkcs11lib, label, "1234", True)
             with a_session as current_admin:
-                ec_priv_key = current_admin.create_ec_key_pair("secp256r1")
+                settings = {
+                    "key_type": "EC",
+                    "EC_curve": SECP384R1(),
+                    "key_usage": {
+                        "crypt": True,
+                        "sign": True,
+                        "wrap": True,
+                        "derive": True,
+                        "recover": True,
+                    },
+                }
+                ec_priv_key = current_admin.create_ec_key_pair(settings)
             assert ec_priv_key is not None
             k_session = PKCS11KeySession(_pkcs11lib, label, "1234")
             with k_session as current_key:

@@ -5,6 +5,7 @@ class TestECKeyExchange:
 
     def test_ec_key_exchange(self):
         from cryptography.hazmat.primitives.asymmetric.ec import ECDH
+        from cryptography.hazmat.primitives.asymmetric.ec import SECP384R1
         from pkcs11_cryptography_keys import (
             PKCS11AdminSession,
             PKCS11KeySession,
@@ -20,7 +21,18 @@ class TestECKeyExchange:
                 _pkcs11lib, label, "1234", True, "ec_token_1", b"254"
             )
             with create_session_1 as current_admin:
-                ec_private_key_1 = current_admin.create_ec_key_pair("secp256r1")
+                settings = {
+                    "key_type": "EC",
+                    "EC_curve": SECP384R1(),
+                    "key_usage": {
+                        "crypt": True,
+                        "sign": True,
+                        "wrap": True,
+                        "derive": True,
+                        "recover": True,
+                    },
+                }
+                ec_private_key_1 = current_admin.create_ec_key_pair(settings)
                 assert ec_private_key_1 is not None
                 pub_key_1 = ec_private_key_1.public_key()
                 pub_key_obj_1 = pub_key_1.public_numbers().public_key()
@@ -29,7 +41,18 @@ class TestECKeyExchange:
                 _pkcs11lib, label, "1234", True, "ec_token_2", b"255"
             )
             with create_session_2 as current_admin:
-                ec_private_key_2 = current_admin.create_ec_key_pair("secp256r1")
+                settings = {
+                    "key_type": "EC",
+                    "EC_curve": SECP384R1(),
+                    "key_usage": {
+                        "crypt": True,
+                        "sign": True,
+                        "wrap": True,
+                        "derive": True,
+                        "recover": True,
+                    },
+                }
+                ec_private_key_2 = current_admin.create_ec_key_pair(settings)
                 assert ec_private_key_2 is not None
                 pub_key_2 = ec_private_key_2.public_key()
                 pub_key_obj_2 = pub_key_2.public_numbers().public_key()
@@ -83,7 +106,18 @@ class TestECKeyExchange:
                 _pkcs11lib, label, "1234", True, "ec_token_1", b"254"
             )
             with create_session_1 as current_admin:
-                ec_private_key_1 = current_admin.create_ec_key_pair("secp384r1")
+                settings = {
+                    "key_type": "EC",
+                    "EC_curve": SECP384R1(),
+                    "key_usage": {
+                        "crypt": True,
+                        "sign": True,
+                        "wrap": True,
+                        "derive": True,
+                        "recover": True,
+                    },
+                }
+                ec_private_key_1 = current_admin.create_ec_key_pair(settings)
                 assert ec_private_key_1 is not None
                 pub_key_1 = ec_private_key_1.public_key()
                 pub_key_obj_1 = pub_key_1.public_numbers().public_key()

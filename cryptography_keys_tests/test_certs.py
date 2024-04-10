@@ -73,7 +73,17 @@ class TestCertificates:
                 _pkcs11lib, label, "1234", True, "sig_token", b"254"
             )
             with create_session as current_admin:
-                rsa_priv_key = current_admin.create_rsa_key_pair(2048)
+                settings = {
+                    "key_type": "RSA",
+                    "RSA_length": 2048,
+                    "key_usage": {
+                        "crypt": True,
+                        "sign": True,
+                        "wrap": True,
+                        "recover": True,
+                    },
+                }
+                rsa_priv_key = current_admin.create_rsa_key_pair(settings)
                 assert rsa_priv_key is not None
 
             key_session = PKCS11KeySession(
