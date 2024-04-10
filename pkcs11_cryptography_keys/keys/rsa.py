@@ -15,6 +15,7 @@ from cryptography.hazmat.primitives.asymmetric.padding import (  # calculate_max
     OAEP,
     PSS,
     PKCS1v15,
+    calculate_max_pss_salt_length,
 )
 from cryptography.hazmat.primitives.asymmetric.rsa import (
     RSAPrivateKey,
@@ -136,7 +137,7 @@ def _get_salt_length_int(key, hash, padding):
     elif padding._salt_length is padding.AUTO:
         raise UnsupportedAlgorithm("AUTO is not supported")
     elif padding._salt_length is padding.MAX_LENGTH:
-        ret = 0  # calculate_max_pss_salt_length(key, hash)
+        ret = calculate_max_pss_salt_length(key, hash)
     return ret
 
 
