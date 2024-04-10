@@ -11,11 +11,10 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import _serialization, hashes
 from cryptography.hazmat.primitives._asymmetric import AsymmetricPadding
 from cryptography.hazmat.primitives.asymmetric import utils as asym_utils
-from cryptography.hazmat.primitives.asymmetric.padding import (
+from cryptography.hazmat.primitives.asymmetric.padding import (  # calculate_max_pss_salt_length,
     OAEP,
     PSS,
     PKCS1v15,
-    # calculate_max_pss_salt_length,
 )
 from cryptography.hazmat.primitives.asymmetric.rsa import (
     RSAPrivateKey,
