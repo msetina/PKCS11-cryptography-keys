@@ -47,7 +47,7 @@ class TestBasic:
                         "recover": False,
                     },
                 }
-                rsa_priv_key = current_admin.create_rsa_key_pair(settings)
+                rsa_priv_key = current_admin.create_key_pair(settings)
                 assert rsa_priv_key is not None
                 assert rsa_priv_key.key_size == 2048
                 ku = rsa_priv_key.read_key_usage()
@@ -73,7 +73,7 @@ class TestBasic:
                         "recover": False,
                     },
                 }
-                ec_priv_key = current_admin.create_ec_key_pair(settings)
+                ec_priv_key = current_admin.create_key_pair(settings)
                 assert ec_priv_key.curve.__class__ is SECP384R1
                 ku = ec_priv_key.read_key_usage()
                 for ka, val in settings["key_usage"].items():
@@ -104,7 +104,7 @@ class TestBasic:
                         "recover": True,
                     },
                 }
-                rsa_priv_key = current_admin.create_rsa_key_pair(settings)
+                rsa_priv_key = current_admin.create_key_pair(settings)
             assert rsa_priv_key is not None
             k_session = PKCS11KeySession(_pkcs11lib, label, "1234")
             with k_session as current_key:
@@ -142,7 +142,7 @@ class TestBasic:
     #         "recover": True,
     #     },
     # }
-    #             rsa_priv_key = current_admin.create_rsa_key_pair(settings)
+    #             rsa_priv_key = current_admin.create_key_pair(settings)
     #         assert rsa_priv_key is not None
     #         k_session = PKCS11KeySession(_pkcs11lib, label, "1234")
     #         with k_session as current_key:
@@ -188,7 +188,7 @@ class TestBasic:
                         "recover": True,
                     },
                 }
-                rsa_priv_key = current_admin.create_rsa_key_pair(settings)
+                rsa_priv_key = current_admin.create_key_pair(settings)
             assert rsa_priv_key is not None
             k_session = PKCS11KeySession(_pkcs11lib, label, "1234")
             with k_session as current_key:
@@ -235,7 +235,7 @@ class TestBasic:
                         "recover": True,
                     },
                 }
-                rsa_priv_key = current_admin.create_rsa_key_pair(settings)
+                rsa_priv_key = current_admin.create_key_pair(settings)
             assert rsa_priv_key is not None
             k_session = PKCS11KeySession(_pkcs11lib, label, "1234")
             with k_session as current_key:
@@ -272,7 +272,7 @@ class TestBasic:
                         "recover": True,
                     },
                 }
-                rsa_priv_key = current_admin.create_rsa_key_pair(settings)
+                rsa_priv_key = current_admin.create_key_pair(settings)
             assert rsa_priv_key is not None
             k_session = PKCS11KeySession(_pkcs11lib, label, "1234")
             with k_session as current_key:
@@ -322,7 +322,7 @@ class TestBasic:
                         "recover": True,
                     },
                 }
-                rsa_priv_key = current_admin.create_rsa_key_pair(settings)
+                rsa_priv_key = current_admin.create_key_pair(settings)
             assert rsa_priv_key is not None
             k_session = PKCS11KeySession(_pkcs11lib, label, "1234")
             with k_session as current_key:
@@ -372,7 +372,7 @@ class TestBasic:
                         "recover": True,
                     },
                 }
-                rsa_priv_key = current_admin.create_rsa_key_pair(settings)
+                rsa_priv_key = current_admin.create_key_pair(settings)
             assert rsa_priv_key is not None
             k_session = PKCS11KeySession(_pkcs11lib, label, "1234")
             with k_session as current_key:
@@ -424,7 +424,7 @@ class TestBasic:
                         "recover": True,
                     },
                 }
-                rsa_priv_key = current_admin.create_rsa_key_pair(settings)
+                rsa_priv_key = current_admin.create_key_pair(settings)
             assert rsa_priv_key is not None
             k_session = PKCS11KeySession(_pkcs11lib, label, "1234")
             with k_session as current_key:
@@ -478,7 +478,7 @@ class TestBasic:
                         "recover": True,
                     },
                 }
-                ec_priv_key = current_admin.create_ec_key_pair(settings)
+                ec_priv_key = current_admin.create_key_pair(settings)
             assert ec_priv_key is not None
             k_session = PKCS11KeySession(_pkcs11lib, label, "1234")
             with k_session as current_key:

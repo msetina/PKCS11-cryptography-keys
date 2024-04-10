@@ -1,3 +1,5 @@
+from importlib import import_module
+
 import PyKCS11
 from asn1crypto.core import UTF8String
 from cryptography.hazmat.primitives.asymmetric.ec import EllipticCurve
@@ -5,8 +7,6 @@ from cryptography.hazmat.primitives.asymmetric.ec import EllipticCurve
 from pkcs11_cryptography_keys.card_token.PKSC11_key_template import (
     get_keypair_templates,
 )
-from pkcs11_cryptography_keys.keys.ec import EllipticCurvePrivateKeyPKCS11
-from pkcs11_cryptography_keys.keys.rsa import RSAPrivateKeyPKCS11
 
 
 # Token representation
@@ -57,9 +57,9 @@ class PKCS11TokenAdmin:
                 ret = True
         return ret
 
-    # Create RSA keypair on the card
-    def create_rsa_key_pair(
-        self, settings: dict[str, str | int | dict | bytes]
+    # Create keypair on the card
+    def create_key_pair(
+        self, settings: dict[str, str | EllipticCurve | int | dict | bytes]
     ):
         ret = None
         if self._session is not None:
@@ -68,27 +68,16 @@ class PKCS11TokenAdmin:
             (pub_key, priv_key) = self._session.generateKeyPair(
                 templates["public"],
                 templates["private"],
-                mecha=PyKCS11.MechanismRSAGENERATEKEYPAIR,
+                mecha=templates["mechanism"],
             )
-            ret = RSAPrivateKeyPKCS11(self._session, self._keyid, priv_key)
-        return ret
-
-    # Create EC keypair on the card
-    def create_ec_key_pair(
-        self, settings: dict[str, str | EllipticCurve | dict | bytes]
-    ):
-        ret = None
-        if self._session is not None:
-            settings.update({"label": self._label, "id": self._keyid})
-            templates = get_keypair_templates(settings)
-            (pub_key, priv_key) = self._session.generateKeyPair(
-                templates["public"],
-                templates["private"],
-                mecha=PyKCS11.MechanismECGENERATEKEYPAIR,
-            )
-            ret = EllipticCurvePrivateKeyPKCS11(
-                self._session, self._keyid, priv_key
-            )
+            key_module = str(templates["key_module"])
+            module = import_module(key_module)
+            if module != None:
+                ret = module.get_key(self._session, self._keyid, priv_key)
+            else:
+                raise Exception(
+                    "Could not find module for {0}".format(key_module)
+                )
         return ret
 
     # Write certificate to the card

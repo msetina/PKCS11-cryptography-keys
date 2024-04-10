@@ -88,20 +88,33 @@ def _prep_EC_key(template: list, settings: dict, tag: str):
                 )
 
 
-_key_types = {"EC": _prep_EC_key, "RSA": _prep_RSA_key}
+_key_types = {
+    "EC": {
+        "prep": _prep_EC_key,
+        "mechanism": PyKCS11.MechanismECGENERATEKEYPAIR,
+        "key_module": "pkcs11_cryptography_keys.keys.ec",
+    },
+    "RSA": {
+        "prep": _prep_RSA_key,
+        "mechanism": PyKCS11.MechanismRSAGENERATEKEYPAIR,
+        "key_module": "pkcs11_cryptography_keys.keys.rsa",
+    },
+}
 
 
-def get_keypair_templates(settings: dict) -> dict[str, list]:
+def get_keypair_templates(settings: dict) -> dict[str, list | str | int]:
     ret = {}
     ls = ["private", "public"]
     if "key_type" in settings:
         kt = settings["key_type"]
         if kt in _key_types:
+            ret["mechanism"] = _key_types[kt]["mechanism"]
+            ret["key_module"] = _key_types[kt]["key_module"]
             for tag in ls:
                 template = []
                 if tag in _key_head:
                     template.extend(_key_head[tag])
-                    _key_types[kt](template, settings, tag)
+                    _key_types[kt]["prep"](template, settings, tag)
                     template.append((PyKCS11.CKA_TOKEN, PyKCS11.CK_TRUE))
                     if tag == "private":
                         template.append(

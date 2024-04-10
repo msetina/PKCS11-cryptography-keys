@@ -32,7 +32,7 @@ class TestECKeyExchange:
                         "recover": True,
                     },
                 }
-                ec_private_key_1 = current_admin.create_ec_key_pair(settings)
+                ec_private_key_1 = current_admin.create_key_pair(settings)
                 assert ec_private_key_1 is not None
                 pub_key_1 = ec_private_key_1.public_key()
                 pub_key_obj_1 = pub_key_1.public_numbers().public_key()
@@ -52,7 +52,7 @@ class TestECKeyExchange:
                         "recover": True,
                     },
                 }
-                ec_private_key_2 = current_admin.create_ec_key_pair(settings)
+                ec_private_key_2 = current_admin.create_key_pair(settings)
                 assert ec_private_key_2 is not None
                 pub_key_2 = ec_private_key_2.public_key()
                 pub_key_obj_2 = pub_key_2.public_numbers().public_key()
@@ -117,7 +117,7 @@ class TestECKeyExchange:
                         "recover": True,
                     },
                 }
-                ec_private_key_1 = current_admin.create_ec_key_pair(settings)
+                ec_private_key_1 = current_admin.create_key_pair(settings)
                 assert ec_private_key_1 is not None
                 pub_key_1 = ec_private_key_1.public_key()
                 pub_key_obj_1 = pub_key_1.public_numbers().public_key()

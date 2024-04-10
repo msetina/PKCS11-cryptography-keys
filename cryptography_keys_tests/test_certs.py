@@ -83,7 +83,7 @@ class TestCertificates:
                         "recover": True,
                     },
                 }
-                rsa_priv_key = current_admin.create_rsa_key_pair(settings)
+                rsa_priv_key = current_admin.create_key_pair(settings)
                 assert rsa_priv_key is not None
 
             key_session = PKCS11KeySession(
