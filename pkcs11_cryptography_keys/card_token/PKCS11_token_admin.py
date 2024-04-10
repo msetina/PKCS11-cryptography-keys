@@ -4,8 +4,8 @@ import PyKCS11
 from cryptography.hazmat.primitives.asymmetric.ec import EllipticCurve
 
 from pkcs11_cryptography_keys.card_token.PKSC11_key_template import (
-    get_keypair_templates,
     get_certificate_template,
+    get_keypair_templates,
 )
 
 
