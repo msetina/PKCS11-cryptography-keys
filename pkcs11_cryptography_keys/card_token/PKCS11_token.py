@@ -6,6 +6,10 @@ from cryptography.exceptions import UnsupportedAlgorithm
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 
+from pkcs11_cryptography_keys.card_token.PKSC11_key_template import (
+    read_key_usage_from_key,
+)
+
 
 # Token representation
 class PKCS11Token:
@@ -23,6 +27,9 @@ class PKCS11Token:
     # API to init card allowed operations
     def _get_mechanism_translation(self, method, PKCS11_mechanism):
         raise NotImplementedError("Just a stub!")
+
+    def read_key_usage(self):
+        return read_key_usage_from_key(self._session, self._private_key)
 
     # At the init time the call to fill_operations will translate method
     # and mechanism to parameters form cryptography API calls
