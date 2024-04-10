@@ -1,8 +1,13 @@
-import importlib
+from importlib import import_module
 
 import PyKCS11
 
 from .PKCS11_slot_session import PKCS11SlotSession
+
+_key_modules = {
+    PyKCS11.CKK_ECDSA: "pkcs11_cryptography_keys.keys.ec",
+    PyKCS11.CKK_RSA: "pkcs11_cryptography_keys.keys.rsa",
+}
 
 
 # contextmanager to facilitate connecting to source
@@ -67,14 +72,9 @@ class PKCS11KeySession(PKCS11SlotSession):
                     self._session.login(self._pin)
                 keyid, key_type, pk_ref = self._get_private_key(self._key_label)
                 module = None
-                if key_type == PyKCS11.CKK_ECDSA:
-                    module = importlib.import_module(
-                        "pkcs11_cryptography_keys.keys.ec"
-                    )
-                if key_type == PyKCS11.CKK_RSA:
-                    module = importlib.import_module(
-                        "pkcs11_cryptography_keys.keys.rsa"
-                    )
+                module_name = _key_modules.get(key_type, None)
+                if module_name is not None:
+                    module = import_module(module_name)
                 if module != None:
                     private_key = module.get_key(
                         self._session,
