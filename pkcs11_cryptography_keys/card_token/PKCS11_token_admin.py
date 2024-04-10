@@ -1,7 +1,10 @@
 import PyKCS11
 from asn1crypto.core import UTF8String
-from asn1crypto.keys import ECDomainParameters, NamedCurve
+from cryptography.hazmat.primitives.asymmetric.ec import EllipticCurve
 
+from pkcs11_cryptography_keys.card_token.PKSC11_key_template import (
+    get_keypair_templates,
+)
 from pkcs11_cryptography_keys.keys.ec import EllipticCurvePrivateKeyPKCS11
 from pkcs11_cryptography_keys.keys.rsa import RSAPrivateKeyPKCS11
 
@@ -55,84 +58,32 @@ class PKCS11TokenAdmin:
         return ret
 
     # Create RSA keypair on the card
-    def create_rsa_key_pair(self, key_length: int):
+    def create_rsa_key_pair(
+        self, settings: dict[str, str | int | dict | bytes]
+    ):
         ret = None
         if self._session is not None:
-            public_template = [
-                (PyKCS11.CKA_CLASS, PyKCS11.CKO_PUBLIC_KEY),
-                (PyKCS11.CKA_PRIVATE, PyKCS11.CK_FALSE),
-                (PyKCS11.CKA_KEY_TYPE, PyKCS11.CKK_RSA),
-                (PyKCS11.CKA_MODULUS_BITS, key_length),
-                (PyKCS11.CKA_TOKEN, PyKCS11.CK_TRUE),
-                (PyKCS11.CKA_ENCRYPT, PyKCS11.CK_TRUE),
-                (PyKCS11.CKA_VERIFY, PyKCS11.CK_TRUE),
-                (PyKCS11.CKA_WRAP, PyKCS11.CK_TRUE),
-                (PyKCS11.CKA_VERIFY_RECOVER, PyKCS11.CK_TRUE),
-                (PyKCS11.CKA_LABEL, self._label),
-                (PyKCS11.CKA_ID, self._keyid),
-            ]
-
-            private_template = [
-                (PyKCS11.CKA_CLASS, PyKCS11.CKO_PRIVATE_KEY),
-                (PyKCS11.CKA_PRIVATE, PyKCS11.CK_TRUE),
-                (PyKCS11.CKA_KEY_TYPE, PyKCS11.CKK_RSA),
-                (PyKCS11.CKA_TOKEN, PyKCS11.CK_TRUE),
-                (PyKCS11.CKA_SENSITIVE, PyKCS11.CK_TRUE),
-                (PyKCS11.CKA_DECRYPT, PyKCS11.CK_TRUE),
-                (PyKCS11.CKA_SIGN, PyKCS11.CK_TRUE),
-                (PyKCS11.CKA_UNWRAP, PyKCS11.CK_TRUE),
-                (PyKCS11.CKA_LABEL, self._label),
-                (PyKCS11.CKA_ID, self._keyid),
-            ]
-
+            settings.update({"label": self._label, "id": self._keyid})
+            templates = get_keypair_templates(settings)
             (pub_key, priv_key) = self._session.generateKeyPair(
-                public_template,
-                private_template,
+                templates["public"],
+                templates["private"],
                 mecha=PyKCS11.MechanismRSAGENERATEKEYPAIR,
             )
             ret = RSAPrivateKeyPKCS11(self._session, self._keyid, priv_key)
         return ret
 
     # Create EC keypair on the card
-    def create_ec_key_pair(self, curve: str):
+    def create_ec_key_pair(
+        self, settings: dict[str, str | EllipticCurve | dict | bytes]
+    ):
         ret = None
         if self._session is not None:
-            # Setup the domain parameters, unicode conversion needed for the curve string
-            domain_params = ECDomainParameters(
-                name="named", value=NamedCurve(curve)
-            )
-            ec_params = domain_params.dump()
-
-            ec_public_tmpl = [
-                (PyKCS11.CKA_CLASS, PyKCS11.CKO_PUBLIC_KEY),
-                (PyKCS11.CKA_PRIVATE, PyKCS11.CK_FALSE),
-                (PyKCS11.CKA_KEY_TYPE, PyKCS11.CKK_ECDSA),
-                (PyKCS11.CKA_EC_PARAMS, ec_params),
-                (PyKCS11.CKA_TOKEN, PyKCS11.CK_TRUE),
-                (PyKCS11.CKA_ENCRYPT, PyKCS11.CK_TRUE),
-                (PyKCS11.CKA_VERIFY, PyKCS11.CK_TRUE),
-                (PyKCS11.CKA_WRAP, PyKCS11.CK_TRUE),
-                (PyKCS11.CKA_LABEL, self._label),
-                (PyKCS11.CKA_ID, self._keyid),
-            ]
-
-            ec_priv_tmpl = [
-                (PyKCS11.CKA_CLASS, PyKCS11.CKO_PRIVATE_KEY),
-                (PyKCS11.CKA_PRIVATE, PyKCS11.CK_TRUE),
-                (PyKCS11.CKA_KEY_TYPE, PyKCS11.CKK_ECDSA),
-                (PyKCS11.CKA_TOKEN, PyKCS11.CK_TRUE),
-                (PyKCS11.CKA_SENSITIVE, PyKCS11.CK_TRUE),
-                (PyKCS11.CKA_DECRYPT, PyKCS11.CK_TRUE),
-                (PyKCS11.CKA_SIGN, PyKCS11.CK_TRUE),
-                (PyKCS11.CKA_UNWRAP, PyKCS11.CK_TRUE),
-                (PyKCS11.CKA_DERIVE, PyKCS11.CK_TRUE),
-                (PyKCS11.CKA_LABEL, self._label),
-                (PyKCS11.CKA_ID, self._keyid),
-            ]
-
+            settings.update({"label": self._label, "id": self._keyid})
+            templates = get_keypair_templates(settings)
             (pub_key, priv_key) = self._session.generateKeyPair(
-                ec_public_tmpl,
-                ec_priv_tmpl,
+                templates["public"],
+                templates["private"],
                 mecha=PyKCS11.MechanismECGENERATEKEYPAIR,
             )
             ret = EllipticCurvePrivateKeyPKCS11(
