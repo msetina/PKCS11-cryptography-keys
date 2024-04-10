@@ -15,6 +15,7 @@ from cryptography.hazmat.primitives.asymmetric.padding import (
     OAEP,
     PSS,
     PKCS1v15,
+    # calculate_max_pss_salt_length,
 )
 from cryptography.hazmat.primitives.asymmetric.rsa import (
     RSAPrivateKey,
@@ -126,30 +127,24 @@ mgf_methods = {
     # hashes.SHA3_512: PyKCS11.CKG_MGF1_SHA3_512,
 }
 
-_salt_length = {
-    hashes.SHA1: 20,
-    hashes.SHA224: 28,
-    hashes.SHA256: 32,
-    hashes.SHA384: 48,
-    hashes.SHA512: 64,
-}
 
-
-def _get_salt_length_int(hash, padding):
+def _get_salt_length_int(key, hash, padding):
     ret = 0
     if isinstance(padding._salt_length, int):
         ret = padding._salt_length
     elif padding._salt_length is padding.DIGEST_LENGTH:
-        ret = _salt_length[hash]
+        ret = hash.digest_size
     elif padding._salt_length is padding.AUTO:
         raise UnsupportedAlgorithm("AUTO is not supported")
     elif padding._salt_length is padding.MAX_LENGTH:
-        ret = 0
+        ret = 0  # calculate_max_pss_salt_length(key, hash)
     return ret
 
 
 # Get PKCS11 mechanism from hashing algorithm and padding information for sign/verify
-def _get_PKSC11_mechanism_SV(operation_dict, algorithm, padding, digest_dict):
+def _get_PKSC11_mechanism_SV(
+    operation_dict, algorithm, padding, digest_dict, key
+):
     PK_me = None
     cls = algorithm.__class__
     pcls = padding.__class__
@@ -161,7 +156,7 @@ def _get_PKSC11_mechanism_SV(operation_dict, algorithm, padding, digest_dict):
             mc = padding.mgf._algorithm.__class__
             mgf = mgf_methods[mc]
             hash = digest_dict[mc]
-            salt = _get_salt_length_int(mc, padding)
+            salt = _get_salt_length_int(key, mc, padding)
             PK_me = PyKCS11.RSA_PSS_Mechanism(
                 mech,
                 hash,
@@ -176,7 +171,7 @@ def _get_PKSC11_mechanism_SV(operation_dict, algorithm, padding, digest_dict):
 # Get PKCS11 mechanism from padding information for encryption/decryption
 
 
-def _get_PKSC11_mechanism_ED(operation_dict, padding, digest_dict):
+def _get_PKSC11_mechanism_ED(operation_dict, padding, digest_dict, key):
     PK_me = None
     pcls = padding.__class__
     if pcls in operation_dict:
@@ -188,7 +183,7 @@ def _get_PKSC11_mechanism_ED(operation_dict, padding, digest_dict):
             mgf = mgf_methods[mc]
             hash = digest_dict[mc]
             mech = operation_dict[pcls]
-            salt = _get_salt_length_int(mc, padding)
+            salt = _get_salt_length_int(key, mc, padding)
             PK_me = PyKCS11.RSA_PSS_Mechanism(mech, hash, mgf, salt)
         if pcls == OAEP:
             mc = padding.mgf._algorithm.__class__
@@ -209,7 +204,10 @@ class RSAPublicKeyPKCS11:
     def encrypt(self, plaintext: bytes, padding: AsymmetricPadding) -> bytes:
         if self._session is not None:
             PK_me = _get_PKSC11_mechanism_ED(
-                self._operations["ENCRYPT"], padding, self._operations["DIGEST"]
+                self._operations["ENCRYPT"],
+                padding,
+                self._operations["DIGEST"],
+                self,
             )
             if PK_me is not None:
                 encrypted_text = self._session.encrypt(
@@ -221,7 +219,7 @@ class RSAPublicKeyPKCS11:
                 )
             return bytes(encrypted_text)
         else:
-            raise Exception("Session to card missing")
+            raise PyKCS11.PyKCS11Error("Session to card missing")
 
     @property
     def key_size(self) -> int:
@@ -230,9 +228,12 @@ class RSAPublicKeyPKCS11:
                 self._public_key,
                 [PyKCS11.CKA_MODULUS_BITS],
             )
-            return int(attrs[0])
+            if len(attrs) > 0 and attrs[0] is not None:
+                return int(attrs[0])
+            else:
+                raise PyKCS11.PyKCS11Error("CKA_MODULUS_BITS not set")
         else:
-            raise Exception("Session to card missing")
+            raise PyKCS11.PyKCS11Error("Session to card missing")
 
     def public_numbers(self) -> RSAPublicNumbers:
         if self._session is not None:
@@ -244,7 +245,7 @@ class RSAPublicKeyPKCS11:
             e = int(binascii.hexlify(bytearray(attrs[1])), 16)
             return RSAPublicNumbers(e, m)
         else:
-            raise Exception("Session to card missing")
+            raise PyKCS11.PyKCS11Error("Session to card missing")
 
     def public_bytes(
         self,
@@ -260,7 +261,7 @@ class RSAPublicKeyPKCS11:
             key = load_der_public_key(pubkey, default_backend())
             return key.public_bytes(encoding, format)
         else:
-            raise Exception("Session to card missing")
+            raise PyKCS11.PyKCS11Error("Session to card missing")
 
     def verify(
         self,
@@ -275,6 +276,7 @@ class RSAPublicKeyPKCS11:
                 algorithm,
                 padding,
                 self._operations["DIGEST"],
+                self,
             )
             rez = False
             if PK_me is None:
@@ -290,7 +292,7 @@ class RSAPublicKeyPKCS11:
             if not rez:
                 raise InvalidSignature("Signature verification failed.")
         else:
-            raise Exception("Session to card missing")
+            raise PyKCS11.PyKCS11Error("Session to card missing")
 
     def recover_data_from_signature(
         self,
@@ -340,13 +342,16 @@ class RSAPrivateKeyPKCS11(PKCS11Token):
             else:
                 return []
         else:
-            raise Exception("Session to card missing")
+            raise PyKCS11.PyKCS11Error("Session to card missing")
 
     # cryptography API
     def decrypt(self, ciphertext: bytes, padding: AsymmetricPadding) -> bytes:
         if self._session is not None:
             PK_me = _get_PKSC11_mechanism_ED(
-                self._operations["DECRYPT"], padding, self._operations["DIGEST"]
+                self._operations["DECRYPT"],
+                padding,
+                self._operations["DIGEST"],
+                self,
             )
             if PK_me is not None:
                 decrypted_text = self._session.decrypt(
@@ -358,7 +363,7 @@ class RSAPrivateKeyPKCS11(PKCS11Token):
                 )
             return bytes(decrypted_text)
         else:
-            raise Exception("Session to card missing")
+            raise PyKCS11.PyKCS11Error("Session to card missing")
 
     @property
     def key_size(self) -> int:
@@ -367,9 +372,14 @@ class RSAPrivateKeyPKCS11(PKCS11Token):
                 self._private_key,
                 [PyKCS11.CKA_MODULUS_BITS],
             )
-            return int(attrs[0])
+            if len(attrs) > 0 and attrs[0] is not None:
+                return int(attrs[0])
+            else:
+                public = self.public_key()
+                if public is not None:
+                    return public.key_size
         else:
-            raise Exception("Session to card missing")
+            raise PyKCS11.PyKCS11Error("Session to card missing")
 
     def public_key(self) -> RSAPublicKeyPKCS11:
         if self._session is not None:
@@ -390,7 +400,7 @@ class RSAPrivateKeyPKCS11(PKCS11Token):
                 )
 
         else:
-            raise Exception("Session to card missing")
+            raise PyKCS11.PyKCS11Error("Session to card missing")
 
     def sign(
         self,
@@ -403,6 +413,7 @@ class RSAPrivateKeyPKCS11(PKCS11Token):
             algorithm,
             padding,
             self._operations["DIGEST"],
+            self,
         )
         if PK_me is not None:
             sig = self._sign(data, PK_me)
