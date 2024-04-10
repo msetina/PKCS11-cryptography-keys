@@ -156,7 +156,7 @@ class EllipticCurvePublicKeyPKCS11:
             else:
                 raise Exception("Could not get curve class")
         else:
-            raise Exception("Session to card missing")
+            raise PyKCS11.PyKCS11Error("Session to card missing")
 
     # cryptography API
     @property
@@ -173,7 +173,7 @@ class EllipticCurvePublicKeyPKCS11:
         if key != None:
             return key.key_size
         else:
-            raise Exception("KEy not found")
+            raise Exception("Key not found")
 
     def public_numbers(self) -> EllipticCurvePublicNumbers:
         key = self._read_public_key_data()
@@ -217,7 +217,7 @@ class EllipticCurvePublicKeyPKCS11:
             if not rez:
                 raise InvalidSignature("Signature verification failed.")
         else:
-            raise Exception("Session to card missing")
+            raise PyKCS11.PyKCS11Error("Session to card missing")
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, EllipticCurvePublicKeyPKCS11):
@@ -305,7 +305,7 @@ class EllipticCurvePrivateKeyPKCS11(PKCS11Token):
                     self._session.destroyObject(derived_key)
                 return derkey
         else:
-            raise Exception("Session to card missing")
+            raise PyKCS11.PyKCS11Error("Session to card missing")
 
     def public_key(self) -> EllipticCurvePublicKeyPKCS11:
         if self._session is not None:
@@ -325,7 +325,7 @@ class EllipticCurvePrivateKeyPKCS11(PKCS11Token):
                     "Public key with id {0!r} not found".format(self._keyid)
                 )
         else:
-            raise Exception("Session to card missing")
+            raise PyKCS11.PyKCS11Error("Session to card missing")
 
     @property
     def curve(self) -> EllipticCurve:
@@ -339,7 +339,7 @@ class EllipticCurvePrivateKeyPKCS11(PKCS11Token):
             curve_class = _get_curve_class(bytes(ec_attrs[0]))
             return curve_class()
         else:
-            raise Exception("Session to card missing")
+            raise PyKCS11.PyKCS11Error("Session to card missing")
 
     @property
     def key_size(self) -> int:
@@ -354,7 +354,7 @@ class EllipticCurvePrivateKeyPKCS11(PKCS11Token):
             curve = curve_class()
             return curve.key_size
         else:
-            raise Exception("Session to card missing")
+            raise PyKCS11.PyKCS11Error("Session to card missing")
 
     def sign(
         self,
