@@ -1,5 +1,8 @@
 import PyKCS11
+from asn1crypto.core import UTF8String
 from asn1crypto.keys import ECDomainParameters, NamedCurve
+from cryptography.hazmat.primitives.serialization import Encoding
+from cryptography.x509 import Certificate, Name
 
 _key_usage = {
     "private": {
@@ -24,6 +27,10 @@ _key_head = {
     ],
     "public": [
         (PyKCS11.CKA_CLASS, PyKCS11.CKO_PUBLIC_KEY),
+        (PyKCS11.CKA_PRIVATE, PyKCS11.CK_FALSE),
+    ],
+    "certificate": [
+        (PyKCS11.CKA_CLASS, PyKCS11.CKO_CERTIFICATE),
         (PyKCS11.CKA_PRIVATE, PyKCS11.CK_FALSE),
     ],
 }
@@ -124,6 +131,29 @@ def get_keypair_templates(settings: dict) -> dict[str, list | str | int]:
                     _prep_key_idents(template, settings, tag)
                     ret[tag] = template
     return ret
+
+
+def get_certificate_template(settings: dict):
+    template = []
+
+    subject = settings["subject"]
+    certificate = settings["certificate"]
+    if "certificate" in _key_head:
+        sub = UTF8String(subject.rfc4514_string())
+        cert = certificate.public_bytes(Encoding.DER)
+        template.extend(_key_head["certificate"])
+        template.append((PyKCS11.CKA_TOKEN, PyKCS11.CK_TRUE))
+        template.append((PyKCS11.CKA_CERTIFICATE_TYPE, PyKCS11.CKC_X_509))
+        template.append((PyKCS11.CKA_MODIFIABLE, PyKCS11.CK_TRUE))
+        template.append((PyKCS11.CKA_VALUE, cert))
+        template.append(
+            (
+                PyKCS11.CKA_SUBJECT,
+                bytes(sub),
+            )
+        )  # must be set and DER, see Table 24, X.509 Certificate Object Attributes
+        _prep_key_idents(template, settings, "certificate")
+        return template
 
 
 _key_classes = {

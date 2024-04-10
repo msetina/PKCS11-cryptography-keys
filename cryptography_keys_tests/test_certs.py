@@ -7,7 +7,7 @@ class TestCertificates:
 
         import datetime
         from cryptography import x509
-        from cryptography.hazmat.primitives import hashes, serialization
+        from cryptography.hazmat.primitives import hashes
         from cryptography.x509.oid import ExtendedKeyUsageOID, NameOID
         from cryptography.hazmat.primitives.asymmetric.rsa import (
             RSAPublicNumbers,
@@ -116,11 +116,9 @@ class TestCertificates:
                     )
 
             admin_session = PKCS11AdminSession(_pkcs11lib, label, "1234", True)
+            settings = {"subject": subject, "certificate": certificate}
             with admin_session as token_admin:
-                token_admin.write_certificate(
-                    subject.rfc4514_string(),
-                    certificate.public_bytes(serialization.Encoding.DER),
-                )
+                token_admin.write_certificate(settings)
 
             slot_session = PKCS11SlotSession(_pkcs11lib, label, "1234")
             cnt = 0

@@ -1,11 +1,11 @@
 from importlib import import_module
 
 import PyKCS11
-from asn1crypto.core import UTF8String
 from cryptography.hazmat.primitives.asymmetric.ec import EllipticCurve
 
 from pkcs11_cryptography_keys.card_token.PKSC11_key_template import (
     get_keypair_templates,
+    get_certificate_template,
 )
 
 
@@ -81,27 +81,11 @@ class PKCS11TokenAdmin:
         return ret
 
     # Write certificate to the card
-    def write_certificate(self, subject: str, cert: bytes):
+    def write_certificate(self, settings):
         ret = False
-        sub = UTF8String(subject)
         if self._session is not None:
-            cert_template = [
-                (PyKCS11.CKA_CLASS, PyKCS11.CKO_CERTIFICATE),
-                (PyKCS11.CKA_PRIVATE, PyKCS11.CK_FALSE),
-                (PyKCS11.CKA_LABEL, self._label),
-                (PyKCS11.CKA_TOKEN, PyKCS11.CK_TRUE),
-                (PyKCS11.CKA_CERTIFICATE_TYPE, PyKCS11.CKC_X_509),
-                (PyKCS11.CKA_MODIFIABLE, PyKCS11.CK_TRUE),
-                (PyKCS11.CKA_VALUE, cert),  # must be BER-encoded
-                (
-                    PyKCS11.CKA_SUBJECT,
-                    bytes(sub),
-                ),  # must be set and DER, see Table 24, X.509 Certificate Object Attributes
-                (
-                    PyKCS11.CKA_ID,
-                    self._keyid,
-                ),  # must be set,
-            ]
+            settings.update({"label": self._label, "id": self._keyid})
+            cert_template = get_certificate_template(settings)
             # create the certificate object
             self._session.createObject(cert_template)
             ret = True
