@@ -13,21 +13,17 @@ from pkcs11_cryptography_keys.card_token.PKCS11_key_definition import (
 class PKCS11X509Certificate(PKCS11KeyIdent):
     def __init__(
         self,
-        subject: Name,
-        certificate: Certificate,
         key_id: bytes,
         label: str | None = None,
     ):
         PKCS11KeyIdent.__init__(self, key_id, label)
-        self._subject = subject
-        self._certificate = certificate
 
-    def get_certificate_template(self):
+    def get_certificate_template(self, subject: Name, certificate: Certificate):
         template = []
         if KeyObjectTypes.certificate in _key_head:
 
-            sub = UTF8String(self._subject.rfc4514_string())
-            cert = self._certificate.public_bytes(Encoding.DER)
+            sub = UTF8String(subject.rfc4514_string())
+            cert = certificate.public_bytes(Encoding.DER)
             template.extend(_key_head[KeyObjectTypes.certificate])
             template.append((PyKCS11.CKA_TOKEN, PyKCS11.CK_TRUE))
             template.append((PyKCS11.CKA_MODIFIABLE, PyKCS11.CK_TRUE))

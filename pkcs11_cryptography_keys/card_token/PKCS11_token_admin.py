@@ -87,10 +87,8 @@ class PKCS11TokenAdmin:
     def write_certificate(self, subject: Name, certificate: Certificate):
         ret = False
         if self._session is not None:
-            cert = PKCS11X509Certificate(
-                subject, certificate, self._keyid, self._label
-            )
-            cert_template = cert.get_certificate_template()
+            cert = PKCS11X509Certificate(self._keyid, self._label)
+            cert_template = cert.get_certificate_template(subject, certificate)
             # create the certificate object
             self._session.createObject(cert_template)
             ret = True
