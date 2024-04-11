@@ -47,10 +47,9 @@ class TestBasic:
                 )
                 assert rsa_priv_key is not None
                 assert rsa_priv_key.key_size == 2048
-                # ku = rsa_priv_key.read_key_usage()
-                # for ka, val in settings["key_usage"].items():
-                #    assert ku[ka] == val
+                ku = rsa_priv_key.read_key_usage()
                 r = current_admin.delete_key_pair()
+                assert ku == keydef
                 assert r
 
     def test_ec_key_creation(self):
@@ -67,12 +66,11 @@ class TestBasic:
                 ec_priv_key = current_admin.create_key_pair(
                     keydef, key_type=KeyTypes.EC, EC_curve=SECP384R1()
                 )
-                assert ec_priv_key.curve.__class__ is SECP384R1
-                # ku = ec_priv_key.read_key_usage()
-                # for ka, val in settings["key_usage"].items():
-                #     assert ku[ka] == val
-                r = current_admin.delete_key_pair()
                 assert ec_priv_key is not None
+                assert ec_priv_key.curve.__class__ is SECP384R1
+                ku = ec_priv_key.read_key_usage()
+                r = current_admin.delete_key_pair()
+                assert ku == keydef
                 assert r
 
     def test_rsa_encryption_PKCS1v15(self):

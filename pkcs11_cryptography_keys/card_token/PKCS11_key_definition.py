@@ -71,6 +71,18 @@ class PKCS11KeyUsage(object):
     def get(self, key: str) -> bool | None:
         return self._usage.get(key, False)
 
+    def __eq__(self, value: object) -> bool:
+        ret = False
+        if isinstance(value, PKCS11KeyUsage):
+            ret = True
+            for k, v in value._usage.items():
+                if k in self._usage:
+                    if v != self._usage[k]:
+                        ret = False
+                else:
+                    ret = False
+            return ret
+
 
 class PKCS11KeyUsageAll(PKCS11KeyUsage):
     def __init__(self) -> None:
