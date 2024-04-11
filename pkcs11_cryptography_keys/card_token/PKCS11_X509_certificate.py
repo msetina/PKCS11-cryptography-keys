@@ -4,8 +4,8 @@ from cryptography.hazmat.primitives.serialization import Encoding
 from cryptography.x509 import Certificate, Name
 
 from pkcs11_cryptography_keys.card_token.PKCS11_key_definition import (
-    PKCS11KeyIdent,
     KeyObjectTypes,
+    PKCS11KeyIdent,
     _key_head,
 )
 

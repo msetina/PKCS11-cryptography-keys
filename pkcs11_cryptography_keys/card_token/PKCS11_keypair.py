@@ -3,10 +3,10 @@ from importlib import import_module
 import PyKCS11
 
 from pkcs11_cryptography_keys.card_token.PKCS11_key_definition import (
+    KeyObjectTypes,
     KeyTypes,
     PKCS11KeyIdent,
     PKCS11KeyUsage,
-    KeyObjectTypes,
     _key_head,
     _key_usage,
 )

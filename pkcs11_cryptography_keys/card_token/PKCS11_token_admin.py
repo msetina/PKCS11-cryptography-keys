@@ -4,8 +4,8 @@ import PyKCS11
 from cryptography.x509 import Certificate, Name
 
 from pkcs11_cryptography_keys.card_token.PKCS11_key_definition import (
-    PKCS11KeyUsage,
     KeyObjectTypes,
+    PKCS11KeyUsage,
 )
 from pkcs11_cryptography_keys.card_token.PKCS11_keypair import PKCS11KeyPair
 from pkcs11_cryptography_keys.card_token.PKCS11_X509_certificate import (
