@@ -19,6 +19,10 @@ class TestCertificates:
             PKCS11SlotSession,
         )
         from pkcs11_cryptography_keys import list_token_labels
+        from pkcs11_cryptography_keys.card_token.PKCS11_key_definition import (
+            PKCS11KeyUsageAllNoDerive,
+            KeyTypes,
+        )
 
         email = "signer@example.net"
         subject = x509.Name(
@@ -73,17 +77,10 @@ class TestCertificates:
                 _pkcs11lib, label, "1234", True, "sig_token", b"254"
             )
             with create_session as current_admin:
-                settings = {
-                    "key_type": "RSA",
-                    "RSA_length": 2048,
-                    "key_usage": {
-                        "crypt": True,
-                        "sign": True,
-                        "wrap": True,
-                        "recover": True,
-                    },
-                }
-                rsa_priv_key = current_admin.create_key_pair(settings)
+                keydef = PKCS11KeyUsageAllNoDerive()
+                rsa_priv_key = current_admin.create_key_pair(
+                    keydef, key_type=KeyTypes.RSA, RSA_length=2048
+                )
                 assert rsa_priv_key is not None
 
             key_session = PKCS11KeySession(
@@ -116,9 +113,8 @@ class TestCertificates:
                     )
 
             admin_session = PKCS11AdminSession(_pkcs11lib, label, "1234", True)
-            settings = {"subject": subject, "certificate": certificate}
             with admin_session as token_admin:
-                token_admin.write_certificate(settings)
+                token_admin.write_certificate(subject, certificate)
 
             slot_session = PKCS11SlotSession(_pkcs11lib, label, "1234")
             cnt = 0

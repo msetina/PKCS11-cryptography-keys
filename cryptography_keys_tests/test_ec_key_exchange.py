@@ -11,6 +11,10 @@ class TestECKeyExchange:
             PKCS11KeySession,
         )
         from pkcs11_cryptography_keys import list_token_labels
+        from pkcs11_cryptography_keys.card_token.PKCS11_key_definition import (
+            PKCS11KeyUsageAll,
+            KeyTypes,
+        )
 
         # pkcs11-tool --modul /usr/lib/softhsm/libsofthsm2.so --login -p "123456" --login-type user --keypairgen --id 1 --label "bob" --key-type EC:prime256v1
         # pkcs11-tool --modul /usr/lib/softhsm/libsofthsm2.so --login -p "123456" --login-type user --keypairgen --id 2 --label "alice" --key-type EC:prime256v1
@@ -21,18 +25,10 @@ class TestECKeyExchange:
                 _pkcs11lib, label, "1234", True, "ec_token_1", b"254"
             )
             with create_session_1 as current_admin:
-                settings = {
-                    "key_type": "EC",
-                    "EC_curve": SECP384R1(),
-                    "key_usage": {
-                        "crypt": True,
-                        "sign": True,
-                        "wrap": True,
-                        "derive": True,
-                        "recover": True,
-                    },
-                }
-                ec_private_key_1 = current_admin.create_key_pair(settings)
+                keydef = PKCS11KeyUsageAll()
+                ec_private_key_1 = current_admin.create_key_pair(
+                    keydef, key_type=KeyTypes.EC, EC_curve=SECP384R1()
+                )
                 assert ec_private_key_1 is not None
                 pub_key_1 = ec_private_key_1.public_key()
                 pub_key_obj_1 = pub_key_1.public_numbers().public_key()
@@ -41,18 +37,10 @@ class TestECKeyExchange:
                 _pkcs11lib, label, "1234", True, "ec_token_2", b"255"
             )
             with create_session_2 as current_admin:
-                settings = {
-                    "key_type": "EC",
-                    "EC_curve": SECP384R1(),
-                    "key_usage": {
-                        "crypt": True,
-                        "sign": True,
-                        "wrap": True,
-                        "derive": True,
-                        "recover": True,
-                    },
-                }
-                ec_private_key_2 = current_admin.create_key_pair(settings)
+                keydef = PKCS11KeyUsageAll()
+                ec_private_key_2 = current_admin.create_key_pair(
+                    keydef, key_type=KeyTypes.EC, EC_curve=SECP384R1()
+                )
                 assert ec_private_key_2 is not None
                 pub_key_2 = ec_private_key_2.public_key()
                 pub_key_obj_2 = pub_key_2.public_numbers().public_key()
@@ -98,6 +86,10 @@ class TestECKeyExchange:
             PKCS11KeySession,
         )
         from pkcs11_cryptography_keys import list_token_labels
+        from pkcs11_cryptography_keys.card_token.PKCS11_key_definition import (
+            PKCS11KeyUsageAll,
+            KeyTypes,
+        )
 
         # Generate a private key for use in the exchange.
         for label in list_token_labels(_pkcs11lib):
@@ -106,18 +98,10 @@ class TestECKeyExchange:
                 _pkcs11lib, label, "1234", True, "ec_token_1", b"254"
             )
             with create_session_1 as current_admin:
-                settings = {
-                    "key_type": "EC",
-                    "EC_curve": SECP384R1(),
-                    "key_usage": {
-                        "crypt": True,
-                        "sign": True,
-                        "wrap": True,
-                        "derive": True,
-                        "recover": True,
-                    },
-                }
-                ec_private_key_1 = current_admin.create_key_pair(settings)
+                keydef = PKCS11KeyUsageAll()
+                ec_private_key_1 = current_admin.create_key_pair(
+                    keydef, key_type=KeyTypes.EC, EC_curve=SECP384R1()
+                )
                 assert ec_private_key_1 is not None
                 pub_key_1 = ec_private_key_1.public_key()
                 pub_key_obj_1 = pub_key_1.public_numbers().public_key()

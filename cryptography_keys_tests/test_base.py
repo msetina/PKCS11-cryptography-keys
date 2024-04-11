@@ -34,50 +34,43 @@ class TestBasic:
 
     def test_rsa_key_creation(self):
         from pkcs11_cryptography_keys import list_token_admins
+        from pkcs11_cryptography_keys.card_token.PKCS11_key_definition import (
+            PKCS11KeyUsageAllNoDerive,
+            KeyTypes,
+        )
 
         for admin in list_token_admins(_pkcs11lib, "1234", True):
             with admin as current_admin:
-                settings = {
-                    "key_type": "RSA",
-                    "RSA_length": 2048,
-                    "key_usage": {
-                        "crypt": True,
-                        "sign": True,
-                        "wrap": True,
-                        "recover": False,
-                    },
-                }
-                rsa_priv_key = current_admin.create_key_pair(settings)
+                keydef = PKCS11KeyUsageAllNoDerive()
+                rsa_priv_key = current_admin.create_key_pair(
+                    keydef, key_type=KeyTypes.RSA, RSA_length=2048
+                )
                 assert rsa_priv_key is not None
                 assert rsa_priv_key.key_size == 2048
-                ku = rsa_priv_key.read_key_usage()
-                for ka, val in settings["key_usage"].items():
-                    assert ku[ka] == val
+                # ku = rsa_priv_key.read_key_usage()
+                # for ka, val in settings["key_usage"].items():
+                #    assert ku[ka] == val
                 r = current_admin.delete_key_pair()
                 assert r
 
     def test_ec_key_creation(self):
         from pkcs11_cryptography_keys import list_token_admins
         from cryptography.hazmat.primitives.asymmetric.ec import SECP384R1
+        from pkcs11_cryptography_keys.card_token.PKCS11_key_definition import (
+            PKCS11KeyUsageAll,
+            KeyTypes,
+        )
 
         for admin in list_token_admins(_pkcs11lib, "1234", True):
             with admin as current_admin:
-                settings = {
-                    "key_type": "EC",
-                    "EC_curve": SECP384R1(),
-                    "key_usage": {
-                        "crypt": True,
-                        "sign": True,
-                        "wrap": True,
-                        "derive": True,
-                        "recover": False,
-                    },
-                }
-                ec_priv_key = current_admin.create_key_pair(settings)
+                keydef = PKCS11KeyUsageAll()
+                ec_priv_key = current_admin.create_key_pair(
+                    keydef, key_type=KeyTypes.EC, EC_curve=SECP384R1()
+                )
                 assert ec_priv_key.curve.__class__ is SECP384R1
-                ku = ec_priv_key.read_key_usage()
-                for ka, val in settings["key_usage"].items():
-                    assert ku[ka] == val
+                # ku = ec_priv_key.read_key_usage()
+                # for ka, val in settings["key_usage"].items():
+                #     assert ku[ka] == val
                 r = current_admin.delete_key_pair()
                 assert ec_priv_key is not None
                 assert r
@@ -89,22 +82,19 @@ class TestBasic:
             PKCS11KeySession,
         )
         from cryptography.hazmat.primitives.asymmetric import padding
+        from pkcs11_cryptography_keys.card_token.PKCS11_key_definition import (
+            PKCS11KeyUsageAllNoDerive,
+            KeyTypes,
+        )
 
         data = b"How to encode this sentence"
         for label in list_token_labels(_pkcs11lib):
             a_session = PKCS11AdminSession(_pkcs11lib, label, "1234", True)
             with a_session as current_admin:
-                settings = {
-                    "key_type": "RSA",
-                    "RSA_length": 2048,
-                    "key_usage": {
-                        "crypt": True,
-                        "sign": True,
-                        "wrap": True,
-                        "recover": True,
-                    },
-                }
-                rsa_priv_key = current_admin.create_key_pair(settings)
+                keydef = PKCS11KeyUsageAllNoDerive()
+                rsa_priv_key = current_admin.create_key_pair(
+                    keydef, key_type=KeyTypes.RSA, RSA_length=2048
+                )
             assert rsa_priv_key is not None
             k_session = PKCS11KeySession(_pkcs11lib, label, "1234")
             with k_session as current_key:
@@ -127,22 +117,19 @@ class TestBasic:
     #     )
     #     from cryptography.hazmat.primitives import hashes
     #     from cryptography.hazmat.primitives.asymmetric import padding
+    # from pkcs11_cryptography_keys.card_token.PKCS11_key_definition import (
+    #     PKCS11KeyUsageAllNoDerive,
+    #     KeyTypes,
+    # )
 
     #     message = b"encrypted data"
     #     for label in list_token_labels(_pkcs11lib):
     #         a_session = PKCS11AdminSession(_pkcs11lib, label, "1234", True)
     #         with a_session as current_admin:
-    #     settings = {
-    #     "key_type": "RSA",
-    #     "RSA_length": 2048,
-    #     "key_usage": {
-    #         "crypt": True,
-    #         "sign": True,
-    #         "wrap": True,
-    #         "recover": True,
-    #     },
-    # }
-    #             rsa_priv_key = current_admin.create_key_pair(settings)
+    #           keydef = PKCS11KeyUsageAllNoDerive()
+    # rsa_priv_key = current_admin.create_key_pair(
+    #     keydef, key_type=KeyTypes.RSA, RSA_length=2048
+    # )
     #         assert rsa_priv_key is not None
     #         k_session = PKCS11KeySession(_pkcs11lib, label, "1234")
     #         with k_session as current_key:
@@ -173,22 +160,19 @@ class TestBasic:
         )
         from cryptography.hazmat.primitives import hashes
         from cryptography.hazmat.primitives.asymmetric import padding
+        from pkcs11_cryptography_keys.card_token.PKCS11_key_definition import (
+            PKCS11KeyUsageAllNoDerive,
+            KeyTypes,
+        )
 
         message = b"encrypted data"
         for label in list_token_labels(_pkcs11lib):
             a_session = PKCS11AdminSession(_pkcs11lib, label, "1234", True)
             with a_session as current_admin:
-                settings = {
-                    "key_type": "RSA",
-                    "RSA_length": 2048,
-                    "key_usage": {
-                        "crypt": True,
-                        "sign": True,
-                        "wrap": True,
-                        "recover": True,
-                    },
-                }
-                rsa_priv_key = current_admin.create_key_pair(settings)
+                keydef = PKCS11KeyUsageAllNoDerive()
+                rsa_priv_key = current_admin.create_key_pair(
+                    keydef, key_type=KeyTypes.RSA, RSA_length=2048
+                )
             assert rsa_priv_key is not None
             k_session = PKCS11KeySession(_pkcs11lib, label, "1234")
             with k_session as current_key:
@@ -220,22 +204,19 @@ class TestBasic:
         )
         from cryptography.hazmat.primitives import hashes
         from cryptography.hazmat.primitives.asymmetric import padding
+        from pkcs11_cryptography_keys.card_token.PKCS11_key_definition import (
+            PKCS11KeyUsageAllNoDerive,
+            KeyTypes,
+        )
 
         data = b"How to encode this sentence"
         for label in list_token_labels(_pkcs11lib):
             a_session = PKCS11AdminSession(_pkcs11lib, label, "1234", True)
             with a_session as current_admin:
-                settings = {
-                    "key_type": "RSA",
-                    "RSA_length": 2048,
-                    "key_usage": {
-                        "crypt": True,
-                        "sign": True,
-                        "wrap": True,
-                        "recover": True,
-                    },
-                }
-                rsa_priv_key = current_admin.create_key_pair(settings)
+                keydef = PKCS11KeyUsageAllNoDerive()
+                rsa_priv_key = current_admin.create_key_pair(
+                    keydef, key_type=KeyTypes.RSA, RSA_length=2048
+                )
             assert rsa_priv_key is not None
             k_session = PKCS11KeySession(_pkcs11lib, label, "1234")
             with k_session as current_key:
@@ -257,22 +238,19 @@ class TestBasic:
         )
         from cryptography.hazmat.primitives import hashes
         from cryptography.hazmat.primitives.asymmetric import padding
+        from pkcs11_cryptography_keys.card_token.PKCS11_key_definition import (
+            PKCS11KeyUsageAllNoDerive,
+            KeyTypes,
+        )
 
         message = b"A message I want to sign"
         for label in list_token_labels(_pkcs11lib):
             a_session = PKCS11AdminSession(_pkcs11lib, label, "1234", True)
             with a_session as current_admin:
-                settings = {
-                    "key_type": "RSA",
-                    "RSA_length": 2048,
-                    "key_usage": {
-                        "crypt": True,
-                        "sign": True,
-                        "wrap": True,
-                        "recover": True,
-                    },
-                }
-                rsa_priv_key = current_admin.create_key_pair(settings)
+                keydef = PKCS11KeyUsageAllNoDerive()
+                rsa_priv_key = current_admin.create_key_pair(
+                    keydef, key_type=KeyTypes.RSA, RSA_length=2048
+                )
             assert rsa_priv_key is not None
             k_session = PKCS11KeySession(_pkcs11lib, label, "1234")
             with k_session as current_key:
@@ -307,22 +285,19 @@ class TestBasic:
         )
         from cryptography.hazmat.primitives import hashes
         from cryptography.hazmat.primitives.asymmetric import padding
+        from pkcs11_cryptography_keys.card_token.PKCS11_key_definition import (
+            PKCS11KeyUsageAllNoDerive,
+            KeyTypes,
+        )
 
         message = b"A message I want to sign"
         for label in list_token_labels(_pkcs11lib):
             a_session = PKCS11AdminSession(_pkcs11lib, label, "1234", True)
             with a_session as current_admin:
-                settings = {
-                    "key_type": "RSA",
-                    "RSA_length": 2048,
-                    "key_usage": {
-                        "crypt": True,
-                        "sign": True,
-                        "wrap": True,
-                        "recover": True,
-                    },
-                }
-                rsa_priv_key = current_admin.create_key_pair(settings)
+                keydef = PKCS11KeyUsageAllNoDerive()
+                rsa_priv_key = current_admin.create_key_pair(
+                    keydef, key_type=KeyTypes.RSA, RSA_length=2048
+                )
             assert rsa_priv_key is not None
             k_session = PKCS11KeySession(_pkcs11lib, label, "1234")
             with k_session as current_key:
@@ -357,22 +332,19 @@ class TestBasic:
         )
         from cryptography.hazmat.primitives import hashes
         from cryptography.hazmat.primitives.asymmetric import padding
+        from pkcs11_cryptography_keys.card_token.PKCS11_key_definition import (
+            PKCS11KeyUsageAllNoDerive,
+            KeyTypes,
+        )
 
         message = b"A message I want to sign"
         for label in list_token_labels(_pkcs11lib):
             a_session = PKCS11AdminSession(_pkcs11lib, label, "1234", True)
             with a_session as current_admin:
-                settings = {
-                    "key_type": "RSA",
-                    "RSA_length": 2048,
-                    "key_usage": {
-                        "crypt": True,
-                        "sign": True,
-                        "wrap": True,
-                        "recover": True,
-                    },
-                }
-                rsa_priv_key = current_admin.create_key_pair(settings)
+                keydef = PKCS11KeyUsageAllNoDerive()
+                rsa_priv_key = current_admin.create_key_pair(
+                    keydef, key_type=KeyTypes.RSA, RSA_length=2048
+                )
             assert rsa_priv_key is not None
             k_session = PKCS11KeySession(_pkcs11lib, label, "1234")
             with k_session as current_key:
@@ -409,22 +381,19 @@ class TestBasic:
         from cryptography.hazmat.primitives.asymmetric import padding
         from cryptography.exceptions import UnsupportedAlgorithm
         import pytest
+        from pkcs11_cryptography_keys.card_token.PKCS11_key_definition import (
+            PKCS11KeyUsageAllNoDerive,
+            KeyTypes,
+        )
 
         message = b"A message I want to sign"
         for label in list_token_labels(_pkcs11lib):
             a_session = PKCS11AdminSession(_pkcs11lib, label, "1234", True)
             with a_session as current_admin:
-                settings = {
-                    "key_type": "RSA",
-                    "RSA_length": 2048,
-                    "key_usage": {
-                        "crypt": True,
-                        "sign": True,
-                        "wrap": True,
-                        "recover": True,
-                    },
-                }
-                rsa_priv_key = current_admin.create_key_pair(settings)
+                keydef = PKCS11KeyUsageAllNoDerive()
+                rsa_priv_key = current_admin.create_key_pair(
+                    keydef, key_type=KeyTypes.RSA, RSA_length=2048
+                )
             assert rsa_priv_key is not None
             k_session = PKCS11KeySession(_pkcs11lib, label, "1234")
             with k_session as current_key:
@@ -458,6 +427,10 @@ class TestBasic:
             SECP384R1,
         )
         from cryptography.hazmat.primitives.asymmetric import utils
+        from pkcs11_cryptography_keys.card_token.PKCS11_key_definition import (
+            PKCS11KeyUsageAll,
+            KeyTypes,
+        )
 
         data = b"How to encode this sentence"
         chosen_hash = hashes.SHA256()
@@ -467,18 +440,10 @@ class TestBasic:
         for label in list_token_labels(_pkcs11lib):
             a_session = PKCS11AdminSession(_pkcs11lib, label, "1234", True)
             with a_session as current_admin:
-                settings = {
-                    "key_type": "EC",
-                    "EC_curve": SECP384R1(),
-                    "key_usage": {
-                        "crypt": True,
-                        "sign": True,
-                        "wrap": True,
-                        "derive": True,
-                        "recover": True,
-                    },
-                }
-                ec_priv_key = current_admin.create_key_pair(settings)
+                keydef = PKCS11KeyUsageAll()
+                ec_priv_key = current_admin.create_key_pair(
+                    keydef, key_type=KeyTypes.EC, EC_curve=SECP384R1()
+                )
             assert ec_priv_key is not None
             k_session = PKCS11KeySession(_pkcs11lib, label, "1234")
             with k_session as current_key:

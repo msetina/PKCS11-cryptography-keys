@@ -1,11 +1,15 @@
 from importlib import import_module
 
 import PyKCS11
-from cryptography.hazmat.primitives.asymmetric.ec import EllipticCurve
+from cryptography.x509 import Certificate, Name
 
-from pkcs11_cryptography_keys.card_token.PKSC11_key_template import (
-    get_certificate_template,
-    get_keypair_templates,
+from pkcs11_cryptography_keys.card_token.PKCS11_key_definition import (
+    PKCS11KeyUsage,
+    KeyObjectTypes,
+)
+from pkcs11_cryptography_keys.card_token.PKCS11_keypair import PKCS11KeyPair
+from pkcs11_cryptography_keys.card_token.PKCS11_X509_certificate import (
+    PKCS11X509Certificate,
 )
 
 
@@ -58,34 +62,35 @@ class PKCS11TokenAdmin:
         return ret
 
     # Create keypair on the card
-    def create_key_pair(
-        self, settings: dict[str, str | EllipticCurve | int | dict | bytes]
-    ):
+    def create_key_pair(self, key_usage: PKCS11KeyUsage, **kwargs):
         ret = None
         if self._session is not None:
-            settings.update({"label": self._label, "id": self._keyid})
-            templates = get_keypair_templates(settings)
-            (pub_key, priv_key) = self._session.generateKeyPair(
-                templates["public"],
-                templates["private"],
-                mecha=templates["mechanism"],
-            )
-            key_module = str(templates["key_module"])
-            module = import_module(key_module)
-            if module != None:
-                ret = module.get_key(self._session, self._keyid, priv_key)
-            else:
-                raise Exception(
-                    "Could not find module for {0}".format(key_module)
+            kp_def = PKCS11KeyPair(key_usage, self._keyid, self._label)
+            definition = kp_def.get_keypair_templates(**kwargs)
+            if definition is not None:
+                (pub_key, priv_key) = self._session.generateKeyPair(
+                    definition.get_template(KeyObjectTypes.public),
+                    definition.get_template(KeyObjectTypes.private),
+                    mecha=definition.get_generation_mechanism(),
                 )
+                key_module = definition.get_module_name()
+                module = import_module(key_module)
+                if module != None:
+                    ret = module.get_key(self._session, self._keyid, priv_key)
+                else:
+                    raise Exception(
+                        "Could not find module for {0}".format(key_module)
+                    )
         return ret
 
     # Write certificate to the card
-    def write_certificate(self, settings):
+    def write_certificate(self, subject: Name, certificate: Certificate):
         ret = False
         if self._session is not None:
-            settings.update({"label": self._label, "id": self._keyid})
-            cert_template = get_certificate_template(settings)
+            cert = PKCS11X509Certificate(
+                subject, certificate, self._keyid, self._label
+            )
+            cert_template = cert.get_certificate_template()
             # create the certificate object
             self._session.createObject(cert_template)
             ret = True

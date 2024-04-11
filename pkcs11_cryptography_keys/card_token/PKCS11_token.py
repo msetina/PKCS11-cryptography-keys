@@ -6,7 +6,7 @@ from cryptography.exceptions import UnsupportedAlgorithm
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 
-from pkcs11_cryptography_keys.card_token.PKSC11_key_template import (
+from pkcs11_cryptography_keys.card_token.PKCS11_key_definition import (
     read_key_usage_from_key,
 )
 
