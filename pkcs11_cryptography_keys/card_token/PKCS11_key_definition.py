@@ -14,6 +14,14 @@ class KeyObjectTypes(Enum):
     certificate = 3
 
 
+class OperationTypes(Enum):
+    CRYPT = 1
+    SIGN = 2
+    WRAP = 3
+    DERIVE = 4
+    RECOVER = 5
+
+
 _key_classes = {
     PyKCS11.CKO_PRIVATE_KEY: KeyObjectTypes.private,
     PyKCS11.CKO_PUBLIC_KEY: KeyObjectTypes.public,
@@ -37,17 +45,17 @@ _key_head = {
 
 _key_usage = {
     KeyObjectTypes.private: {
-        "crypt": PyKCS11.CKA_DECRYPT,
-        "sign": PyKCS11.CKA_SIGN,
-        "wrap": PyKCS11.CKA_UNWRAP,
-        "derive": PyKCS11.CKA_DERIVE,
-        "recover": PyKCS11.CKA_SIGN_RECOVER,
+        OperationTypes.CRYPT: PyKCS11.CKA_DECRYPT,
+        OperationTypes.SIGN: PyKCS11.CKA_SIGN,
+        OperationTypes.WRAP: PyKCS11.CKA_UNWRAP,
+        OperationTypes.DERIVE: PyKCS11.CKA_DERIVE,
+        OperationTypes.RECOVER: PyKCS11.CKA_SIGN_RECOVER,
     },
     KeyObjectTypes.public: {
-        "crypt": PyKCS11.CKA_ENCRYPT,
-        "sign": PyKCS11.CKA_VERIFY,
-        "wrap": PyKCS11.CKA_WRAP,
-        "recover": PyKCS11.CKA_VERIFY_RECOVER,
+        OperationTypes.CRYPT: PyKCS11.CKA_ENCRYPT,
+        OperationTypes.SIGN: PyKCS11.CKA_VERIFY,
+        OperationTypes.WRAP: PyKCS11.CKA_WRAP,
+        OperationTypes.RECOVER: PyKCS11.CKA_VERIFY_RECOVER,
     },
 }
 
@@ -61,14 +69,14 @@ class PKCS11KeyUsage(object):
         recover: bool,
         derive: bool | None = None,
     ) -> None:
-        self._usage: dict[str, bool | None] = {}
-        self._usage["crypt"] = crypt
-        self._usage["sign"] = sign
-        self._usage["wrap"] = wrap
-        self._usage["derive"] = derive
-        self._usage["recover"] = recover
+        self._usage: dict[OperationTypes, bool | None] = {}
+        self._usage[OperationTypes.CRYPT] = crypt
+        self._usage[OperationTypes.SIGN] = sign
+        self._usage[OperationTypes.WRAP] = wrap
+        self._usage[OperationTypes.DERIVE] = derive
+        self._usage[OperationTypes.RECOVER] = recover
 
-    def get(self, key: str) -> bool | None:
+    def get(self, key: OperationTypes) -> bool | None:
         return self._usage.get(key, False)
 
     def __eq__(self, value: object) -> bool:
@@ -81,7 +89,7 @@ class PKCS11KeyUsage(object):
                         ret = False
                 else:
                     ret = False
-            return ret
+        return ret
 
 
 class PKCS11KeyUsageAll(PKCS11KeyUsage):
@@ -118,7 +126,7 @@ def read_key_usage_from_key(session, key_ref) -> PKCS11KeyUsage | None:
         usage_list = []
         for k, v in _key_usage[tag].items():
             atr_template.append(v)
-            usage_list.append(k)
+            usage_list.append(str(k).replace("OperationTypes.", "").lower())
         attrs = session.getAttributeValue(key_ref, atr_template)
         rezult = dict(zip(usage_list, attrs))
         return PKCS11KeyUsage(**rezult)
