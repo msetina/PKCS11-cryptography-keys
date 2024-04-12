@@ -11,6 +11,8 @@ from pkcs11_cryptography_keys.card_token.PKCS11_keypair import PKCS11KeyPair
 from pkcs11_cryptography_keys.card_token.PKCS11_X509_certificate import (
     PKCS11X509Certificate,
 )
+from pkcs11_cryptography_keys.keys.ec import EllipticCurvePrivateKeyPKCS11
+from pkcs11_cryptography_keys.keys.rsa import RSAPrivateKeyPKCS11
 
 
 # Token representation
@@ -24,7 +26,7 @@ class PKCS11TokenAdmin:
         self._label = label
 
     # Delete keypair from the card
-    def delete_key_pair(self):
+    def delete_key_pair(self) -> bool:
         ret = False
         if self._session is not None:
             public_objects = self._session.findObjects(
@@ -47,7 +49,7 @@ class PKCS11TokenAdmin:
         return ret
 
     # Delete certificate from the card
-    def delete_certificate(self):
+    def delete_certificate(self) -> bool:
         ret = False
         if self._session is not None:
             cert_objects = self._session.findObjects(
@@ -62,7 +64,9 @@ class PKCS11TokenAdmin:
         return ret
 
     # Create keypair on the card
-    def create_key_pair(self, key_usage: PKCS11KeyUsage, **kwargs):
+    def create_key_pair(
+        self, key_usage: PKCS11KeyUsage, **kwargs
+    ) -> RSAPrivateKeyPKCS11 | EllipticCurvePrivateKeyPKCS11 | None:
         ret = None
         if self._session is not None:
             kp_def = PKCS11KeyPair(key_usage, self._keyid, self._label)
@@ -84,7 +88,9 @@ class PKCS11TokenAdmin:
         return ret
 
     # Write certificate to the card
-    def write_certificate(self, subject: Name, certificate: Certificate):
+    def write_certificate(
+        self, subject: Name, certificate: Certificate
+    ) -> bool:
         ret = False
         if self._session is not None:
             cert = PKCS11X509Certificate(self._keyid, self._label)

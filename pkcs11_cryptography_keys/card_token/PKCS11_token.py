@@ -134,9 +134,10 @@ class PKCS11Token:
             return b"".join(ca_chain)
 
     # Get id and label for the Private key
-    def get_id_and_label(self):
+    def get_id_and_label(self) -> tuple:
         if self._session is not None and self._private_key is not None:
             attributes = self._session.getAttributeValue(
                 self._private_key, [PyKCS11.CKA_ID, PyKCS11.CKA_LABEL]
             )
             return attributes[0], attributes[1]
+        return None, None

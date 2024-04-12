@@ -18,7 +18,9 @@ class PKCS11X509Certificate(PKCS11KeyIdent):
     ):
         PKCS11KeyIdent.__init__(self, key_id, label)
 
-    def get_certificate_template(self, subject: Name, certificate: Certificate):
+    def get_certificate_template(
+        self, subject: Name, certificate: Certificate
+    ) -> list:
         template = []
         if KeyObjectTypes.certificate in _key_head:
 
@@ -37,4 +39,4 @@ class PKCS11X509Certificate(PKCS11KeyIdent):
                 )
             )  # must be set and DER, see Table 24, X.509 Certificate Object Attributes
             self._prep_key_idents(template)
-            return template
+        return template

@@ -15,7 +15,7 @@ class PKCS11SlotSession(PKCS11Session):
 
     # Open session with the card
     # Uses pin if needed, reads permited operations(mechanisms)
-    def open(self):
+    def open(self) -> PKCS11Slot | None:
         library = PyKCS11.PyKCS11Lib()
         library.load(self._pksc11_lib)
         slots = library.getSlotList(tokenPresent=True)
@@ -38,3 +38,14 @@ class PKCS11SlotSession(PKCS11Session):
                 if self._login_required:
                     self._session.login(self._pin)
                 return PKCS11Slot(self._session)
+
+        return None
+
+    # context manager API
+    def __enter__(self) -> PKCS11Slot | None:
+        ret = self.open()
+        return ret
+
+    async def __aenter__(self) -> PKCS11Slot | None:
+        ret = self.open()
+        return ret

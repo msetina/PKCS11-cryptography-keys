@@ -393,5 +393,5 @@ EllipticCurvePrivateKeyWithSerialization = EllipticCurvePrivateKeyPKCS11
 EllipticCurvePrivateKey.register(EllipticCurvePrivateKeyPKCS11)
 
 
-def get_key(session, keyid, pk_ref):
+def get_key(session, keyid, pk_ref) -> EllipticCurvePrivateKeyPKCS11:
     return EllipticCurvePrivateKeyPKCS11(session, keyid, pk_ref)

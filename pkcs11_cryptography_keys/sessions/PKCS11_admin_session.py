@@ -4,11 +4,11 @@ from pkcs11_cryptography_keys.card_token.PKCS11_token_admin import (
     PKCS11TokenAdmin,
 )
 
-from .PKCS11_key_session import PKCS11KeySession
+from .PKCS11_session import PKCS11Session
 
 
 # contextmanager to facilitate connecting to source
-class PKCS11AdminSession(PKCS11KeySession):
+class PKCS11AdminSession(PKCS11Session):
     def __init__(
         self,
         pksc11_lib: str,
@@ -18,12 +18,16 @@ class PKCS11AdminSession(PKCS11KeySession):
         key_label: str | None = None,
         key_id: bytes | None = None,
     ):
-        super().__init__(pksc11_lib, token_label, pin, key_label)
+        super().__init__()
         self._key_id = key_id
         self._norm_user = norm_user
+        self._pksc11_lib = pksc11_lib
+        self._token_label = token_label
+        self._pin = pin
+        self._key_label = key_label
 
     # get private key id and label
-    def _get_private_key_info(self, key_label: str | None = None):
+    def _get_private_key_info(self, key_label: str | None = None) -> tuple:
         if self._session is not None:
             private_key = None
             if key_label is None:
@@ -51,12 +55,11 @@ class PKCS11AdminSession(PKCS11KeySession):
                 keyid = bytes(attrs[0])
                 label = attrs[1]
                 return keyid, label
-            else:
-                return None, None
+        return None, None
 
     # Open session with the card
     # Uses pin if needed, reads permited operations(mechanisms)
-    def open(self):
+    def open(self) -> PKCS11TokenAdmin | None:
         library = PyKCS11.PyKCS11Lib()
         library.load(self._pksc11_lib)
         slots = library.getSlotList(tokenPresent=True)
@@ -106,3 +109,13 @@ class PKCS11AdminSession(PKCS11KeySession):
                     return PKCS11TokenAdmin(
                         self._session, self._key_id, self._key_label
                     )
+        return None
+
+    # context manager API
+    def __enter__(self) -> PKCS11TokenAdmin | None:
+        ret = self.open()
+        return ret
+
+    async def __aenter__(self) -> PKCS11TokenAdmin | None:
+        ret = self.open()
+        return ret

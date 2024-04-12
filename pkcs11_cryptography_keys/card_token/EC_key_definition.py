@@ -11,13 +11,13 @@ key_type = {
 }
 
 
-def get_params(**kwargs):
+def get_params(**kwargs) -> dict:
     params = {}
     params.update(kwargs)
     return params
 
 
-def prep_key(template: list, tag: KeyObjectTypes, **kwargs):
+def prep_key(template: list, tag: KeyObjectTypes, **kwargs) -> None:
     if "EC_curve" in kwargs:
         curve = kwargs["EC_curve"]
         # Setup the domain parameters, unicode conversion needed for the curve string

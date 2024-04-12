@@ -441,5 +441,5 @@ RSAPrivateKeyWithSerialization = RSAPrivateKeyPKCS11
 RSAPrivateKey.register(RSAPrivateKeyPKCS11)
 
 
-def get_key(session, keyid, pk_ref):
+def get_key(session, keyid, pk_ref) -> RSAPrivateKeyPKCS11:
     return RSAPrivateKeyPKCS11(session, keyid, pk_ref)

@@ -107,7 +107,7 @@ class PKCS11KeyIdent(object):
         self._key_id = key_id
         self._label = label
 
-    def _prep_key_idents(self, template: list):
+    def _prep_key_idents(self, template: list) -> None:
         if self._label is not None:
             template.append((PyKCS11.CKA_LABEL, self._label))
         template.append((PyKCS11.CKA_ID, self._key_id))

@@ -2,11 +2,11 @@ import PyKCS11
 
 from pkcs11_cryptography_keys.card_slot.PKCS11_slot_admin import PKCS11SlotAdmin
 
-from .PKCS11_slot_session import PKCS11SlotSession
+from .PKCS11_session import PKCS11Session
 
 
 # contextmanager to facilitate connecting to source
-class PKCS11SlotAdminSession(PKCS11SlotSession):
+class PKCS11SlotAdminSession(PKCS11Session):
     def __init__(
         self,
         pksc11_lib: str,
@@ -14,12 +14,15 @@ class PKCS11SlotAdminSession(PKCS11SlotSession):
         pin: str,
         norm_user: bool = False,
     ):
-        super().__init__(pksc11_lib, token_label, pin)
+        super().__init__()
+        self._pksc11_lib = pksc11_lib
+        self._token_label = token_label
+        self._pin = pin
         self._norm_user = norm_user
 
     # Open session with the card
     # Uses pin if needed, reads permited operations(mechanisms)
-    def open(self):
+    def open(self) -> PKCS11SlotAdmin | None:
         library = PyKCS11.PyKCS11Lib()
         library.load(self._pksc11_lib)
         slots = library.getSlotList(tokenPresent=True)
@@ -45,3 +48,13 @@ class PKCS11SlotAdminSession(PKCS11SlotSession):
                     else:
                         self._session.login(self._pin, PyKCS11.CKU_SO)
                 return PKCS11SlotAdmin(self._session)
+        return None
+
+    # context manager API
+    def __enter__(self) -> PKCS11SlotAdmin | None:
+        ret = self.open()
+        return ret
+
+    async def __aenter__(self) -> PKCS11SlotAdmin | None:
+        ret = self.open()
+        return ret

@@ -31,7 +31,7 @@ class PKCS11KeypairDefinition(object):
     def get_generation_mechanism(self) -> PyKCS11.Mechanism:
         return self._generation_mechanism
 
-    def set_template(self, key: KeyObjectTypes, template: list):
+    def set_template(self, key: KeyObjectTypes, template: list) -> None:
         self._templates[key] = template
 
     def get_template(self, key: KeyObjectTypes) -> list:

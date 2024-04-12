@@ -10,13 +10,13 @@ key_type = {
 }
 
 
-def get_params(**kwargs):
+def get_params(**kwargs) -> dict:
     params = {}
     params.update(kwargs)
     return params
 
 
-def prep_key(template: list, tag: KeyObjectTypes, **kwargs):
+def prep_key(template: list, tag: KeyObjectTypes, **kwargs) -> None:
     if "RSA_length" in kwargs:
         key_length = kwargs["RSA_length"]
         if tag in [KeyObjectTypes.private, KeyObjectTypes.public]:
