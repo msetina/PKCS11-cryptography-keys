@@ -1,3 +1,8 @@
+from pkcs11_cryptography_keys.card_token.PKCS11_key_definition import (
+    KeyTypes,
+    PKCS11KeyUsageAll,
+    PKCS11KeyUsageAllNoDerive,
+)
 from pkcs11_cryptography_keys.sessions.PKCS11_admin_session import (
     PKCS11AdminSession,
 )
@@ -13,9 +18,4 @@ from pkcs11_cryptography_keys.sessions.PKCS11_slot_session import (
 from pkcs11_cryptography_keys.utils.listers import (
     list_token_admins,
     list_token_labels,
-)
-from pkcs11_cryptography_keys.card_token.PKCS11_key_definition import (
-    PKCS11KeyUsageAllNoDerive,
-    PKCS11KeyUsageAll,
-    KeyTypes,
 )
