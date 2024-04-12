@@ -9,12 +9,10 @@ class TestECKeyExchange:
         from pkcs11_cryptography_keys import (
             PKCS11AdminSession,
             PKCS11KeySession,
-        )
-        from pkcs11_cryptography_keys import list_token_labels
-        from pkcs11_cryptography_keys.card_token.PKCS11_key_definition import (
             PKCS11KeyUsageAll,
             KeyTypes,
         )
+        from pkcs11_cryptography_keys import list_token_labels
 
         # pkcs11-tool --modul /usr/lib/softhsm/libsofthsm2.so --login -p "123456" --login-type user --keypairgen --id 1 --label "bob" --key-type EC:prime256v1
         # pkcs11-tool --modul /usr/lib/softhsm/libsofthsm2.so --login -p "123456" --login-type user --keypairgen --id 2 --label "alice" --key-type EC:prime256v1
@@ -84,12 +82,10 @@ class TestECKeyExchange:
         from pkcs11_cryptography_keys import (
             PKCS11AdminSession,
             PKCS11KeySession,
-        )
-        from pkcs11_cryptography_keys import list_token_labels
-        from pkcs11_cryptography_keys.card_token.PKCS11_key_definition import (
             PKCS11KeyUsageAll,
             KeyTypes,
         )
+        from pkcs11_cryptography_keys import list_token_labels
 
         # Generate a private key for use in the exchange.
         for label in list_token_labels(_pkcs11lib):

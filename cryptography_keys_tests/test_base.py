@@ -33,10 +33,10 @@ class TestBasic:
         assert True
 
     def test_rsa_key_creation(self):
-        from pkcs11_cryptography_keys import list_token_admins
-        from pkcs11_cryptography_keys.card_token.PKCS11_key_definition import (
+        from pkcs11_cryptography_keys import (
             PKCS11KeyUsageAllNoDerive,
             KeyTypes,
+            list_token_admins,
         )
 
         for admin in list_token_admins(_pkcs11lib, "1234", True):
@@ -53,12 +53,12 @@ class TestBasic:
                 assert r
 
     def test_ec_key_creation(self):
-        from pkcs11_cryptography_keys import list_token_admins
-        from cryptography.hazmat.primitives.asymmetric.ec import SECP384R1
-        from pkcs11_cryptography_keys.card_token.PKCS11_key_definition import (
+        from pkcs11_cryptography_keys import (
             PKCS11KeyUsageAll,
             KeyTypes,
+            list_token_admins,
         )
+        from cryptography.hazmat.primitives.asymmetric.ec import SECP384R1
 
         for admin in list_token_admins(_pkcs11lib, "1234", True):
             with admin as current_admin:
@@ -78,12 +78,10 @@ class TestBasic:
             list_token_labels,
             PKCS11AdminSession,
             PKCS11KeySession,
-        )
-        from cryptography.hazmat.primitives.asymmetric import padding
-        from pkcs11_cryptography_keys.card_token.PKCS11_key_definition import (
             PKCS11KeyUsageAllNoDerive,
             KeyTypes,
         )
+        from cryptography.hazmat.primitives.asymmetric import padding
 
         data = b"How to encode this sentence"
         for label in list_token_labels(_pkcs11lib):
@@ -112,13 +110,11 @@ class TestBasic:
     #         list_token_labels,
     #         PKCS11AdminSession,
     #         PKCS11KeySession,
+    #         PKCS11KeyUsageAllNoDerive,
+    #         KeyTypes,
     #     )
     #     from cryptography.hazmat.primitives import hashes
     #     from cryptography.hazmat.primitives.asymmetric import padding
-    # from pkcs11_cryptography_keys.card_token.PKCS11_key_definition import (
-    #     PKCS11KeyUsageAllNoDerive,
-    #     KeyTypes,
-    # )
 
     #     message = b"encrypted data"
     #     for label in list_token_labels(_pkcs11lib):
@@ -155,13 +151,11 @@ class TestBasic:
             list_token_labels,
             PKCS11AdminSession,
             PKCS11KeySession,
-        )
-        from cryptography.hazmat.primitives import hashes
-        from cryptography.hazmat.primitives.asymmetric import padding
-        from pkcs11_cryptography_keys.card_token.PKCS11_key_definition import (
             PKCS11KeyUsageAllNoDerive,
             KeyTypes,
         )
+        from cryptography.hazmat.primitives import hashes
+        from cryptography.hazmat.primitives.asymmetric import padding
 
         message = b"encrypted data"
         for label in list_token_labels(_pkcs11lib):
@@ -199,13 +193,11 @@ class TestBasic:
             list_token_labels,
             PKCS11AdminSession,
             PKCS11KeySession,
-        )
-        from cryptography.hazmat.primitives import hashes
-        from cryptography.hazmat.primitives.asymmetric import padding
-        from pkcs11_cryptography_keys.card_token.PKCS11_key_definition import (
             PKCS11KeyUsageAllNoDerive,
             KeyTypes,
         )
+        from cryptography.hazmat.primitives import hashes
+        from cryptography.hazmat.primitives.asymmetric import padding
 
         data = b"How to encode this sentence"
         for label in list_token_labels(_pkcs11lib):
@@ -233,13 +225,11 @@ class TestBasic:
             list_token_labels,
             PKCS11AdminSession,
             PKCS11KeySession,
-        )
-        from cryptography.hazmat.primitives import hashes
-        from cryptography.hazmat.primitives.asymmetric import padding
-        from pkcs11_cryptography_keys.card_token.PKCS11_key_definition import (
             PKCS11KeyUsageAllNoDerive,
             KeyTypes,
         )
+        from cryptography.hazmat.primitives import hashes
+        from cryptography.hazmat.primitives.asymmetric import padding
 
         message = b"A message I want to sign"
         for label in list_token_labels(_pkcs11lib):
@@ -280,13 +270,11 @@ class TestBasic:
             list_token_labels,
             PKCS11AdminSession,
             PKCS11KeySession,
-        )
-        from cryptography.hazmat.primitives import hashes
-        from cryptography.hazmat.primitives.asymmetric import padding
-        from pkcs11_cryptography_keys.card_token.PKCS11_key_definition import (
             PKCS11KeyUsageAllNoDerive,
             KeyTypes,
         )
+        from cryptography.hazmat.primitives import hashes
+        from cryptography.hazmat.primitives.asymmetric import padding
 
         message = b"A message I want to sign"
         for label in list_token_labels(_pkcs11lib):
@@ -327,13 +315,11 @@ class TestBasic:
             list_token_labels,
             PKCS11AdminSession,
             PKCS11KeySession,
-        )
-        from cryptography.hazmat.primitives import hashes
-        from cryptography.hazmat.primitives.asymmetric import padding
-        from pkcs11_cryptography_keys.card_token.PKCS11_key_definition import (
             PKCS11KeyUsageAllNoDerive,
             KeyTypes,
         )
+        from cryptography.hazmat.primitives import hashes
+        from cryptography.hazmat.primitives.asymmetric import padding
 
         message = b"A message I want to sign"
         for label in list_token_labels(_pkcs11lib):
@@ -374,15 +360,13 @@ class TestBasic:
             list_token_labels,
             PKCS11AdminSession,
             PKCS11KeySession,
+            PKCS11KeyUsageAllNoDerive,
+            KeyTypes,
         )
         from cryptography.hazmat.primitives import hashes
         from cryptography.hazmat.primitives.asymmetric import padding
         from cryptography.exceptions import UnsupportedAlgorithm
         import pytest
-        from pkcs11_cryptography_keys.card_token.PKCS11_key_definition import (
-            PKCS11KeyUsageAllNoDerive,
-            KeyTypes,
-        )
 
         message = b"A message I want to sign"
         for label in list_token_labels(_pkcs11lib):

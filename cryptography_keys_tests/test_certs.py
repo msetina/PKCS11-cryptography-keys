@@ -17,11 +17,9 @@ class TestCertificates:
             PKCS11AdminSession,
             PKCS11KeySession,
             PKCS11SlotSession,
-        )
-        from pkcs11_cryptography_keys import list_token_labels
-        from pkcs11_cryptography_keys.card_token.PKCS11_key_definition import (
             PKCS11KeyUsageAllNoDerive,
             KeyTypes,
+            list_token_labels,
         )
 
         email = "signer@example.net"
