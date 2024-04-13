@@ -6,19 +6,21 @@ class TestCertificates:
     def test_create_cert(self):
 
         import datetime
+
         from cryptography import x509
+        from cryptography.hazmat.backends import default_backend
         from cryptography.hazmat.primitives import hashes
-        from cryptography.x509.oid import ExtendedKeyUsageOID, NameOID
         from cryptography.hazmat.primitives.asymmetric.rsa import (
             RSAPublicNumbers,
         )
-        from cryptography.hazmat.backends import default_backend
+        from cryptography.x509.oid import ExtendedKeyUsageOID, NameOID
+
         from pkcs11_cryptography_keys import (
+            KeyTypes,
             PKCS11AdminSession,
             PKCS11KeySession,
-            PKCS11SlotSession,
             PKCS11KeyUsageAllNoDerive,
-            KeyTypes,
+            PKCS11SlotSession,
             list_token_labels,
         )
 

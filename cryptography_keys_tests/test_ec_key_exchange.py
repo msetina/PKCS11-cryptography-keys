@@ -4,15 +4,15 @@ _pkcs11lib = "/usr/lib/softhsm/libsofthsm2.so"
 class TestECKeyExchange:
 
     def test_ec_key_exchange(self):
-        from cryptography.hazmat.primitives.asymmetric.ec import ECDH
-        from cryptography.hazmat.primitives.asymmetric.ec import SECP384R1
+        from cryptography.hazmat.primitives.asymmetric.ec import ECDH, SECP384R1
+
         from pkcs11_cryptography_keys import (
+            KeyTypes,
             PKCS11AdminSession,
             PKCS11KeySession,
             PKCS11KeyUsageAll,
-            KeyTypes,
+            list_token_labels,
         )
-        from pkcs11_cryptography_keys import list_token_labels
 
         # pkcs11-tool --modul /usr/lib/softhsm/libsofthsm2.so --login -p "123456" --login-type user --keypairgen --id 1 --label "bob" --key-type EC:prime256v1
         # pkcs11-tool --modul /usr/lib/softhsm/libsofthsm2.so --login -p "123456" --login-type user --keypairgen --id 2 --label "alice" --key-type EC:prime256v1
@@ -72,20 +72,21 @@ class TestECKeyExchange:
                 assert r
 
     def test_simple_exchange(self):
+        from cryptography.hazmat.primitives import hashes
         from cryptography.hazmat.primitives.asymmetric.ec import (
             ECDH,
-            generate_private_key,
             SECP384R1,
+            generate_private_key,
         )
         from cryptography.hazmat.primitives.kdf.hkdf import HKDF
-        from cryptography.hazmat.primitives import hashes
+
         from pkcs11_cryptography_keys import (
+            KeyTypes,
             PKCS11AdminSession,
             PKCS11KeySession,
             PKCS11KeyUsageAll,
-            KeyTypes,
+            list_token_labels,
         )
-        from pkcs11_cryptography_keys import list_token_labels
 
         # Generate a private key for use in the exchange.
         for label in list_token_labels(_pkcs11lib):

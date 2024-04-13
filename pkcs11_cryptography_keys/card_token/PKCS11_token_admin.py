@@ -72,11 +72,27 @@ class PKCS11TokenAdmin:
             kp_def = PKCS11KeyPair(key_usage, self._keyid, self._label)
             definition = kp_def.get_keypair_templates(**kwargs)
             if definition is not None:
-                (pub_key, priv_key) = self._session.generateKeyPair(
-                    definition.get_template(KeyObjectTypes.public),
-                    definition.get_template(KeyObjectTypes.private),
-                    mecha=definition.get_generation_mechanism(),
-                )
+                if definition.is_loaded():
+                    self._session.createObject(
+                        definition.get_template(KeyObjectTypes.private)
+                    )
+                    self._session.createObject(
+                        definition.get_template(KeyObjectTypes.public)
+                    )
+                    private_objects = self._session.findObjects(
+                        [
+                            (PyKCS11.CKA_CLASS, PyKCS11.CKO_PRIVATE_KEY),
+                            (PyKCS11.CKA_ID, self._keyid),
+                        ]
+                    )
+                    for priv_o in private_objects:
+                        priv_key = priv_o
+                else:
+                    (pub_key, priv_key) = self._session.generateKeyPair(
+                        definition.get_template(KeyObjectTypes.public),
+                        definition.get_template(KeyObjectTypes.private),
+                        mecha=definition.get_generation_mechanism(),
+                    )
                 key_module = definition.get_module_name()
                 module = import_module(key_module)
                 if module != None:
@@ -89,11 +105,18 @@ class PKCS11TokenAdmin:
 
     # Write certificate to the card
     def write_certificate(
-        self, subject: Name, certificate: Certificate
+        self,
+        subject: Name,
+        certificate: Certificate,
+        keyid: bytes | None = None,
+        label: str | None = None,
     ) -> bool:
         ret = False
         if self._session is not None:
-            cert = PKCS11X509Certificate(self._keyid, self._label)
+            if keyid is not None and label is not None:
+                cert = PKCS11X509Certificate(keyid, label)
+            else:
+                cert = PKCS11X509Certificate(self._keyid, self._label)
             cert_template = cert.get_certificate_template(subject, certificate)
             # create the certificate object
             self._session.createObject(cert_template)

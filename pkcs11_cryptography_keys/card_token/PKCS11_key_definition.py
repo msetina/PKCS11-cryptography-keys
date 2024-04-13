@@ -60,6 +60,12 @@ _key_usage = {
 }
 
 
+def to_biginteger_bytes(value: int) -> bytes:
+    value = int(value)
+    bit_length = value.bit_length() + 7
+    return value.to_bytes(bit_length // 8, byteorder="big")
+
+
 class PKCS11KeyUsage(object):
     def __init__(
         self,

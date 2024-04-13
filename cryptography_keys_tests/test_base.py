@@ -13,8 +13,8 @@ class TestBasic:
 
     def test_change_pin(self):
         from pkcs11_cryptography_keys import (
-            list_token_labels,
             PKCS11SlotAdminSession,
+            list_token_labels,
         )
 
         for label in list_token_labels(_pkcs11lib):
@@ -34,8 +34,8 @@ class TestBasic:
 
     def test_rsa_key_creation(self):
         from pkcs11_cryptography_keys import (
-            PKCS11KeyUsageAllNoDerive,
             KeyTypes,
+            PKCS11KeyUsageAllNoDerive,
             list_token_admins,
         )
 
@@ -53,12 +53,13 @@ class TestBasic:
                 assert r
 
     def test_ec_key_creation(self):
+        from cryptography.hazmat.primitives.asymmetric.ec import SECP384R1
+
         from pkcs11_cryptography_keys import (
-            PKCS11KeyUsageAll,
             KeyTypes,
+            PKCS11KeyUsageAll,
             list_token_admins,
         )
-        from cryptography.hazmat.primitives.asymmetric.ec import SECP384R1
 
         for admin in list_token_admins(_pkcs11lib, "1234", True):
             with admin as current_admin:
@@ -74,14 +75,15 @@ class TestBasic:
                 assert r
 
     def test_rsa_encryption_PKCS1v15(self):
+        from cryptography.hazmat.primitives.asymmetric import padding
+
         from pkcs11_cryptography_keys import (
-            list_token_labels,
+            KeyTypes,
             PKCS11AdminSession,
             PKCS11KeySession,
             PKCS11KeyUsageAllNoDerive,
-            KeyTypes,
+            list_token_labels,
         )
-        from cryptography.hazmat.primitives.asymmetric import padding
 
         data = b"How to encode this sentence"
         for label in list_token_labels(_pkcs11lib):
@@ -147,15 +149,16 @@ class TestBasic:
     #             assert r
 
     def test_rsa_encryption_OAEP(self):
+        from cryptography.hazmat.primitives import hashes
+        from cryptography.hazmat.primitives.asymmetric import padding
+
         from pkcs11_cryptography_keys import (
-            list_token_labels,
+            KeyTypes,
             PKCS11AdminSession,
             PKCS11KeySession,
             PKCS11KeyUsageAllNoDerive,
-            KeyTypes,
+            list_token_labels,
         )
-        from cryptography.hazmat.primitives import hashes
-        from cryptography.hazmat.primitives.asymmetric import padding
 
         message = b"encrypted data"
         for label in list_token_labels(_pkcs11lib):
@@ -189,15 +192,16 @@ class TestBasic:
                 assert r
 
     def test_rsa_sign_verify_PKCS1(self):
+        from cryptography.hazmat.primitives import hashes
+        from cryptography.hazmat.primitives.asymmetric import padding
+
         from pkcs11_cryptography_keys import (
-            list_token_labels,
+            KeyTypes,
             PKCS11AdminSession,
             PKCS11KeySession,
             PKCS11KeyUsageAllNoDerive,
-            KeyTypes,
+            list_token_labels,
         )
-        from cryptography.hazmat.primitives import hashes
-        from cryptography.hazmat.primitives.asymmetric import padding
 
         data = b"How to encode this sentence"
         for label in list_token_labels(_pkcs11lib):
@@ -221,15 +225,16 @@ class TestBasic:
                 assert r
 
     def test_rsa_sign_verify_PSS_digest_length(self):
+        from cryptography.hazmat.primitives import hashes
+        from cryptography.hazmat.primitives.asymmetric import padding
+
         from pkcs11_cryptography_keys import (
-            list_token_labels,
+            KeyTypes,
             PKCS11AdminSession,
             PKCS11KeySession,
             PKCS11KeyUsageAllNoDerive,
-            KeyTypes,
+            list_token_labels,
         )
-        from cryptography.hazmat.primitives import hashes
-        from cryptography.hazmat.primitives.asymmetric import padding
 
         message = b"A message I want to sign"
         for label in list_token_labels(_pkcs11lib):
@@ -266,15 +271,16 @@ class TestBasic:
                 assert r
 
     def test_rsa_sign_verify_PSS_max_length(self):
+        from cryptography.hazmat.primitives import hashes
+        from cryptography.hazmat.primitives.asymmetric import padding
+
         from pkcs11_cryptography_keys import (
-            list_token_labels,
+            KeyTypes,
             PKCS11AdminSession,
             PKCS11KeySession,
             PKCS11KeyUsageAllNoDerive,
-            KeyTypes,
+            list_token_labels,
         )
-        from cryptography.hazmat.primitives import hashes
-        from cryptography.hazmat.primitives.asymmetric import padding
 
         message = b"A message I want to sign"
         for label in list_token_labels(_pkcs11lib):
@@ -311,15 +317,16 @@ class TestBasic:
                 assert r
 
     def test_rsa_sign_verify_PSS_message_length(self):
+        from cryptography.hazmat.primitives import hashes
+        from cryptography.hazmat.primitives.asymmetric import padding
+
         from pkcs11_cryptography_keys import (
-            list_token_labels,
+            KeyTypes,
             PKCS11AdminSession,
             PKCS11KeySession,
             PKCS11KeyUsageAllNoDerive,
-            KeyTypes,
+            list_token_labels,
         )
-        from cryptography.hazmat.primitives import hashes
-        from cryptography.hazmat.primitives.asymmetric import padding
 
         message = b"A message I want to sign"
         for label in list_token_labels(_pkcs11lib):
@@ -356,17 +363,18 @@ class TestBasic:
                 assert r
 
     def test_rsa_sign_verify_PSS_auto(self):
+        import pytest
+        from cryptography.exceptions import UnsupportedAlgorithm
+        from cryptography.hazmat.primitives import hashes
+        from cryptography.hazmat.primitives.asymmetric import padding
+
         from pkcs11_cryptography_keys import (
-            list_token_labels,
+            KeyTypes,
             PKCS11AdminSession,
             PKCS11KeySession,
             PKCS11KeyUsageAllNoDerive,
-            KeyTypes,
+            list_token_labels,
         )
-        from cryptography.hazmat.primitives import hashes
-        from cryptography.hazmat.primitives.asymmetric import padding
-        from cryptography.exceptions import UnsupportedAlgorithm
-        import pytest
 
         message = b"A message I want to sign"
         for label in list_token_labels(_pkcs11lib):
@@ -398,20 +406,21 @@ class TestBasic:
 
     # only prehashed supported for EC in softhsm2
     def test_ec_sign_verify(self):
-        from pkcs11_cryptography_keys import (
-            list_token_labels,
-            PKCS11AdminSession,
-            PKCS11KeySession,
-        )
         from cryptography.hazmat.primitives import hashes
+        from cryptography.hazmat.primitives.asymmetric import utils
         from cryptography.hazmat.primitives.asymmetric.ec import (
             ECDSA,
             SECP384R1,
         )
-        from cryptography.hazmat.primitives.asymmetric import utils
+
+        from pkcs11_cryptography_keys import (
+            PKCS11AdminSession,
+            PKCS11KeySession,
+            list_token_labels,
+        )
         from pkcs11_cryptography_keys.card_token.PKCS11_key_definition import (
-            PKCS11KeyUsageAll,
             KeyTypes,
+            PKCS11KeyUsageAll,
         )
 
         data = b"How to encode this sentence"

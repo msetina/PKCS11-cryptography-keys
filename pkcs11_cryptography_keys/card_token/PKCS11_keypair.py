@@ -24,6 +24,7 @@ class PKCS11KeypairDefinition(object):
         self._module_name = module_name
         self._generation_mechanism = generation_mechanism
         self._templates: dict[KeyObjectTypes, list] = {}
+        self._is_loaded = False
 
     def get_module_name(self) -> str:
         return self._module_name
@@ -36,6 +37,12 @@ class PKCS11KeypairDefinition(object):
 
     def get_template(self, key: KeyObjectTypes) -> list:
         return self._templates[key]
+
+    def set_is_loaded(self, is_loaded: bool):
+        self._is_loaded = is_loaded
+
+    def is_loaded(self):
+        return self._is_loaded
 
 
 class PKCS11KeyPair(PKCS11KeyIdent):
@@ -80,6 +87,8 @@ class PKCS11KeyPair(PKCS11KeyIdent):
                                 template.append(
                                     (PyKCS11.CKA_SENSITIVE, PyKCS11.CK_TRUE)
                                 )
+                            is_loaded = module.load_key(**params)
+                            returns.set_is_loaded(is_loaded)
                             self._prep_key_usage(template, tag)
                             self._prep_key_idents(template)
                             returns.set_template(tag, template)
