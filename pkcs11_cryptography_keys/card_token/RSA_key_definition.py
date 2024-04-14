@@ -1,4 +1,5 @@
 import PyKCS11
+from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey
 
 from pkcs11_cryptography_keys.card_token.PKCS11_key_definition import (
     KeyObjectTypes,
@@ -40,7 +41,9 @@ def prep_key(template: list, tag: KeyObjectTypes, **kwargs) -> None:
 
 def load_key(template: list, tag: KeyObjectTypes, **kwargs) -> bool:
     ret = False
-    if "RSA_private_key" in kwargs:
+    if "RSA_private_key" in kwargs and isinstance(
+        kwargs["RSA_private_key"], RSAPrivateKey
+    ):
         private = kwargs["RSA_private_key"]
         pn = private.private_numbers()
         pubn = private.public_key().public_numbers()
