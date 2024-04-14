@@ -1,5 +1,6 @@
 import PyKCS11
 from asn1crypto.keys import ECDomainParameters, NamedCurve
+from cryptography.hazmat.primitives.asymmetric.ec import EllipticCurvePrivateKey
 from cryptography.hazmat.primitives.serialization import (
     Encoding,
     NoEncryption,
@@ -51,13 +52,15 @@ def prep_key(template: list, tag: KeyObjectTypes, **kwargs) -> None:
 
 def load_key(template: list, tag: KeyObjectTypes, **kwargs) -> bool:
     ret = False
-    if "EC_private_key" in kwargs:
+    if "EC_private_key" in kwargs and isinstance(
+        kwargs["EC_private_key"], EllipticCurvePrivateKey
+    ):
         private = kwargs["EC_private_key"]
         key_val = private.private_bytes(
             Encoding.DER, PrivateFormat.PKCS8, NoEncryption()
         )
         point = private.public_key().public_bytes(
-            Encoding.DER, PublicFormat.UncompressedPoint
+            Encoding.X962, PublicFormat.UncompressedPoint
         )
         if tag in [KeyObjectTypes.private, KeyObjectTypes.public]:
             domain_params = ECDomainParameters(
@@ -81,6 +84,7 @@ def load_key(template: list, tag: KeyObjectTypes, **kwargs) -> bool:
                         (PyKCS11.CKA_EC_POINT, point),
                     ]
                 )
+            ret = True
     return ret
 
 
