@@ -200,22 +200,25 @@ class EllipticCurvePublicKeyPKCS11:
         signature_algorithm: EllipticCurveSignatureAlgorithm,
     ) -> None:
         if self._session != None:
-            PK_me = _get_PKSC11_mechanism(
-                self._operations["VERIFY"], signature_algorithm
-            )
-            sig_ec = decode_dss_signature(signature)
-            sig_val = _encode_RS_signature(sig_ec, self.key_size)
-            if sig_val is None:
-                raise InvalidSignature("Signature could not be verified.")
-            rez = False
-            if PK_me is None:
-                rez = self._session.verify(self._public_key, data, sig_val)
-            else:
-                rez = self._session.verify(
-                    self._public_key, data, sig_val, PK_me
+            if "VERIFY" in self._operations:
+                PK_me = _get_PKSC11_mechanism(
+                    self._operations["VERIFY"], signature_algorithm
                 )
-            if not rez:
-                raise InvalidSignature("Signature verification failed.")
+                sig_ec = decode_dss_signature(signature)
+                sig_val = _encode_RS_signature(sig_ec, self.key_size)
+                if sig_val is None:
+                    raise InvalidSignature("Signature could not be verified.")
+                rez = False
+                if PK_me is None:
+                    rez = self._session.verify(self._public_key, data, sig_val)
+                else:
+                    rez = self._session.verify(
+                        self._public_key, data, sig_val, PK_me
+                    )
+                if not rez:
+                    raise InvalidSignature("Signature verification failed.")
+            else:
+                raise UnsupportedAlgorithm("Verify not supported by the card")
         else:
             raise PyKCS11.PyKCS11Error("Session to card missing")
 
@@ -252,58 +255,63 @@ class EllipticCurvePrivateKeyPKCS11(PKCS11Token):
                 Encoding.X962,
                 PublicFormat.UncompressedPoint,
             )
-            PK_me = _get_PKSC11_mechanism_D(
-                self._operations["DERIVE"], algorithm, publicData
-            )
-            if PK_me is None:
-                raise UnsupportedAlgorithm(
-                    "Derive algorithm {0} not supported.".format(algorithm)
+            if "DERIVE" in self._operations:
+                PK_me = _get_PKSC11_mechanism_D(
+                    self._operations["DERIVE"], algorithm, publicData
                 )
+                if PK_me is None:
+                    raise UnsupportedAlgorithm(
+                        "Derive algorithm {0} not supported.".format(algorithm)
+                    )
+                else:
+                    if (
+                        peer_public_key.curve.key_size != self.curve.key_size
+                        and peer_public_key.curve.name != self.curve.name
+                    ):
+                        raise Exception(
+                            "Both keys need to be of curve and length"
+                        )
+
+                    keyID = (0x22,)
+                    template = [
+                        (PyKCS11.CKA_CLASS, PyKCS11.CKO_SECRET_KEY),
+                        (PyKCS11.CKA_KEY_TYPE, PyKCS11.CKK_GENERIC_SECRET),
+                        (PyKCS11.CKA_TOKEN, PyKCS11.CK_FALSE),
+                        (PyKCS11.CKA_SENSITIVE, PyKCS11.CK_FALSE),
+                        (PyKCS11.CKA_PRIVATE, PyKCS11.CK_TRUE),
+                        (PyKCS11.CKA_ENCRYPT, PyKCS11.CK_TRUE),
+                        (PyKCS11.CKA_DECRYPT, PyKCS11.CK_TRUE),
+                        (PyKCS11.CKA_SIGN, PyKCS11.CK_FALSE),
+                        (PyKCS11.CKA_EXTRACTABLE, PyKCS11.CK_TRUE),
+                        (PyKCS11.CKA_VERIFY, PyKCS11.CK_FALSE),
+                        (PyKCS11.CKA_LABEL, "derivedECDHKey"),
+                        (PyKCS11.CKA_ID, keyID),
+                    ]
+                    derkey = None
+                    try:
+                        derived_key = self._session.deriveKey(
+                            self._private_key, template, PK_me
+                        )
+                        # :param baseKey: the base key handle
+                        # :type baseKey: integer
+                        # :param template: template for the unwrapped key
+                        # :param mecha: the decrypt mechanism to be used
+                        # :type mecha: :class:`Mechanism`
+                        # :return: the unwrapped key object
+                        # :rtype: integer
+
+                        # get bytes of the key
+                        attributes = self._session.getAttributeValue(
+                            derived_key, [PyKCS11.CKA_VALUE]
+                        )
+                        derkey = bytes(attributes[0])
+                    except:
+                        raise
+                    finally:
+                        self._session.destroyObject(derived_key)
+                    return derkey
             else:
-                if (
-                    peer_public_key.curve.key_size != self.curve.key_size
-                    and peer_public_key.curve.name != self.curve.name
-                ):
-                    raise Exception("Both keys need to be of curve and length")
-
-                keyID = (0x22,)
-                template = [
-                    (PyKCS11.CKA_CLASS, PyKCS11.CKO_SECRET_KEY),
-                    (PyKCS11.CKA_KEY_TYPE, PyKCS11.CKK_GENERIC_SECRET),
-                    (PyKCS11.CKA_TOKEN, PyKCS11.CK_FALSE),
-                    (PyKCS11.CKA_SENSITIVE, PyKCS11.CK_FALSE),
-                    (PyKCS11.CKA_PRIVATE, PyKCS11.CK_TRUE),
-                    (PyKCS11.CKA_ENCRYPT, PyKCS11.CK_TRUE),
-                    (PyKCS11.CKA_DECRYPT, PyKCS11.CK_TRUE),
-                    (PyKCS11.CKA_SIGN, PyKCS11.CK_FALSE),
-                    (PyKCS11.CKA_EXTRACTABLE, PyKCS11.CK_TRUE),
-                    (PyKCS11.CKA_VERIFY, PyKCS11.CK_FALSE),
-                    (PyKCS11.CKA_LABEL, "derivedECDHKey"),
-                    (PyKCS11.CKA_ID, keyID),
-                ]
-                derkey = None
-                try:
-                    derived_key = self._session.deriveKey(
-                        self._private_key, template, PK_me
-                    )
-                    # :param baseKey: the base key handle
-                    # :type baseKey: integer
-                    # :param template: template for the unwrapped key
-                    # :param mecha: the decrypt mechanism to be used
-                    # :type mecha: :class:`Mechanism`
-                    # :return: the unwrapped key object
-                    # :rtype: integer
-
-                    # get bytes of the key
-                    attributes = self._session.getAttributeValue(
-                        derived_key, [PyKCS11.CKA_VALUE]
-                    )
-                    derkey = bytes(attributes[0])
-                except:
-                    raise
-                finally:
-                    self._session.destroyObject(derived_key)
-                return derkey
+                raise UnsupportedAlgorithm("Derive not supported by the card")
         else:
             raise PyKCS11.PyKCS11Error("Session to card missing")
 
@@ -361,21 +369,24 @@ class EllipticCurvePrivateKeyPKCS11(PKCS11Token):
         data: bytes,
         signature_algorithm: EllipticCurveSignatureAlgorithm,
     ) -> bytes:
-        PK_me = _get_PKSC11_mechanism(
-            self._operations["SIGN"], signature_algorithm
-        )
-        if PK_me is None:
-            raise UnsupportedAlgorithm(
-                "Signing algorithm {0} not supported.".format(
-                    signature_algorithm
+        if "SIGN" in self._operations:
+            PK_me = _get_PKSC11_mechanism(
+                self._operations["SIGN"], signature_algorithm
+            )
+            if PK_me is None:
+                raise UnsupportedAlgorithm(
+                    "Signing algorithm {0} not supported.".format(
+                        signature_algorithm
+                    )
                 )
-            )
+            else:
+                sig = self._sign(data, PK_me)
+                r, s = _decode_RS_signature(sig)
+                return encode_dss_signature(
+                    int(binascii.hexlify(r), 16), int(binascii.hexlify(s), 16)
+                )
         else:
-            sig = self._sign(data, PK_me)
-            r, s = _decode_RS_signature(sig)
-            return encode_dss_signature(
-                int(binascii.hexlify(r), 16), int(binascii.hexlify(s), 16)
-            )
+            raise UnsupportedAlgorithm("Sign not supported by the card.")
 
     def private_numbers(self) -> EllipticCurvePrivateNumbers:
         raise NotImplementedError("Cards should not export private key")

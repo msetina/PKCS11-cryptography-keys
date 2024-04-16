@@ -203,21 +203,26 @@ class RSAPublicKeyPKCS11:
     # cryptography API
     def encrypt(self, plaintext: bytes, padding: AsymmetricPadding) -> bytes:
         if self._session is not None:
-            PK_me = _get_PKSC11_mechanism_ED(
-                self._operations["ENCRYPT"],
-                padding,
-                self._operations["DIGEST"],
-                self,
-            )
-            if PK_me is not None:
-                encrypted_text = self._session.encrypt(
-                    self._public_key, plaintext, PK_me
+            if "ENCRYPT" in self._operations and "DIGEST" in self._operations:
+                PK_me = _get_PKSC11_mechanism_ED(
+                    self._operations["ENCRYPT"],
+                    padding,
+                    self._operations["DIGEST"],
+                    self,
                 )
+                if PK_me is not None:
+                    encrypted_text = self._session.encrypt(
+                        self._public_key, plaintext, PK_me
+                    )
+                else:
+                    raise UnsupportedAlgorithm(
+                        "Algorithm not supported: {0}".format(padding.__class__)
+                    )
+                return bytes(encrypted_text)
             else:
                 raise UnsupportedAlgorithm(
-                    "Algorithm not supported: {0}".format(padding.__class__)
+                    "Encryption is not supported by card"
                 )
-            return bytes(encrypted_text)
         else:
             raise PyKCS11.PyKCS11Error("Session to card missing")
 
@@ -271,26 +276,29 @@ class RSAPublicKeyPKCS11:
         algorithm: asym_utils.Prehashed | hashes.HashAlgorithm,
     ) -> None:
         if self._session != None:
-            PK_me = _get_PKSC11_mechanism_SV(
-                self._operations["VERIFY"],
-                algorithm,
-                padding,
-                self._operations["DIGEST"],
-                self,
-            )
-            rez = False
-            if PK_me is None:
-                raise UnsupportedAlgorithm(
-                    "Algorithm not supported: {0} + {1}".format(
-                        padding.__class__, algorithm.__class__
+            if "VERIFY" in self._operations and "DIGEST" in self._operations:
+                PK_me = _get_PKSC11_mechanism_SV(
+                    self._operations["VERIFY"],
+                    algorithm,
+                    padding,
+                    self._operations["DIGEST"],
+                    self,
+                )
+                rez = False
+                if PK_me is None:
+                    raise UnsupportedAlgorithm(
+                        "Algorithm not supported: {0} + {1}".format(
+                            padding.__class__, algorithm.__class__
+                        )
                     )
-                )
+                else:
+                    rez = self._session.verify(
+                        self._public_key, data, signature, PK_me
+                    )
+                if not rez:
+                    raise InvalidSignature("Signature verification failed.")
             else:
-                rez = self._session.verify(
-                    self._public_key, data, signature, PK_me
-                )
-            if not rez:
-                raise InvalidSignature("Signature verification failed.")
+                raise UnsupportedAlgorithm("Verify not supported by card")
         else:
             raise PyKCS11.PyKCS11Error("Session to card missing")
 
@@ -347,21 +355,24 @@ class RSAPrivateKeyPKCS11(PKCS11Token):
     # cryptography API
     def decrypt(self, ciphertext: bytes, padding: AsymmetricPadding) -> bytes:
         if self._session is not None:
-            PK_me = _get_PKSC11_mechanism_ED(
-                self._operations["DECRYPT"],
-                padding,
-                self._operations["DIGEST"],
-                self,
-            )
-            if PK_me is not None:
-                decrypted_text = self._session.decrypt(
-                    self._private_key, ciphertext, PK_me
+            if "DECRYPT" in self._operations and "DIGEST" in self._operations:
+                PK_me = _get_PKSC11_mechanism_ED(
+                    self._operations["DECRYPT"],
+                    padding,
+                    self._operations["DIGEST"],
+                    self,
                 )
+                if PK_me is not None:
+                    decrypted_text = self._session.decrypt(
+                        self._private_key, ciphertext, PK_me
+                    )
+                else:
+                    raise UnsupportedAlgorithm(
+                        "Algorithm not supported: {0}".format(padding.__class__)
+                    )
+                return bytes(decrypted_text)
             else:
-                raise UnsupportedAlgorithm(
-                    "Algorithm not supported: {0}".format(padding.__class__)
-                )
-            return bytes(decrypted_text)
+                raise UnsupportedAlgorithm("Decrypt not supported by card.")
         else:
             raise PyKCS11.PyKCS11Error("Session to card missing")
 
@@ -408,22 +419,25 @@ class RSAPrivateKeyPKCS11(PKCS11Token):
         padding: AsymmetricPadding,
         algorithm: asym_utils.Prehashed | hashes.HashAlgorithm,
     ) -> bytes:
-        PK_me = _get_PKSC11_mechanism_SV(
-            self._operations["SIGN"],
-            algorithm,
-            padding,
-            self._operations["DIGEST"],
-            self,
-        )
-        if PK_me is not None:
-            sig = self._sign(data, PK_me)
-            return bytes(sig)
-        else:
-            raise UnsupportedAlgorithm(
-                "Not supported. algorithm: {0}, hash:{1}".format(
-                    algorithm.__class__, padding.__class__
-                )
+        if "SIGN" in self._operations and "DIGEST" in self._operations:
+            PK_me = _get_PKSC11_mechanism_SV(
+                self._operations["SIGN"],
+                algorithm,
+                padding,
+                self._operations["DIGEST"],
+                self,
             )
+            if PK_me is not None:
+                sig = self._sign(data, PK_me)
+                return bytes(sig)
+            else:
+                raise UnsupportedAlgorithm(
+                    "Not supported. algorithm: {0}, hash:{1}".format(
+                        algorithm.__class__, padding.__class__
+                    )
+                )
+        else:
+            raise UnsupportedAlgorithm("Sign not supported by card")
 
     def private_numbers(self) -> RSAPrivateNumbers:
         raise NotImplementedError("Cards should not export private key")
