@@ -97,7 +97,7 @@ class PKCS11AdminSession(PKCS11Session):
                             keyid = self._key_id
                     if label is None:
                         if self._key_label is None:
-                            label = b"default"
+                            label = "default"
                         else:
                             label = self._key_label
                     return PKCS11TokenAdmin(self._session, keyid, label)
