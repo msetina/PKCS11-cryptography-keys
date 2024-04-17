@@ -90,7 +90,7 @@ class PKCS11AdminSession(PKCS11Session):
                     if keyid is None:
                         if self._key_id is None:
                             if self._key_label is None:
-                                keyid = b"01"
+                                keyid = b"\x01"
                             else:
                                 self._key_label.encode()
                         else:
@@ -103,7 +103,7 @@ class PKCS11AdminSession(PKCS11Session):
                     return PKCS11TokenAdmin(self._session, keyid, label)
                 else:
                     if self._key_label is None:
-                        self._key_label = b"01"
+                        self._key_label = b"\x01"
                     if self._key_id is None:
                         self._key_id = self._key_label.encode()
                     return PKCS11TokenAdmin(
