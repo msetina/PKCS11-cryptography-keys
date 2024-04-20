@@ -6,7 +6,7 @@ import binascii
 from typing import Dict
 
 import PyKCS11
-from asn1crypto.core import ObjectIdentifier, OctetString
+from asn1crypto.core import BitString, ObjectIdentifier, OctetString
 from cryptography.exceptions import InvalidSignature, UnsupportedAlgorithm
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric.ec import (
@@ -144,17 +144,39 @@ class EllipticCurvePublicKeyPKCS11:
                     PyKCS11.CKA_EC_PARAMS,
                 ],
             )
-            ansiXY = OctetString.load(bytes(ec_attrs[0]))
-            ansiXY_bytes = bytes(ansiXY)
-            curve_class = _get_curve_class(bytes(ec_attrs[1]))
-            if curve_class != None and ansiXY_bytes[0] == 4:
-                curve = curve_class()
-                public_key_buffer = EllipticCurvePublicKey.from_encoded_point(
-                    curve, ansiXY_bytes
-                )
-                return public_key_buffer
+            if ec_attrs[0] is not None:
+                tag = ec_attrs[0][0]
+                if tag == 4:
+                    ansiXY = OctetString.load(bytes(ec_attrs[0]))
+                elif tag == 3:
+                    ansiXY = BitString.load(bytes(ec_attrs[0]))
+                    # this will be in next versions. Question how to get proper 04|X|Y from it.
+                else:
+                    raise PyKCS11.PyKCS11Error(
+                        "EC point envelope is not recognized: {0}".format(
+                            ec_attrs[0]
+                        )
+                    )
+                ansiXY_bytes = bytes(ansiXY)
+                curve_class = _get_curve_class(bytes(ec_attrs[1]))
+                if curve_class != None:
+                    curve = curve_class()
+                    if ansiXY_bytes[0] == 4:
+                        public_key_buffer = (
+                            EllipticCurvePublicKey.from_encoded_point(
+                                curve, ansiXY_bytes
+                            )
+                        )
+                        return public_key_buffer
+                    else:
+                        raise PyKCS11.PyKCS11Error(
+                            "EC point not properly formated (04|X|Y)"
+                        )
+
+                else:
+                    raise Exception("Could not get curve class")
             else:
-                raise Exception("Could not get curve class")
+                raise PyKCS11.PyKCS11Error("EC point was not returned")
         else:
             raise PyKCS11.PyKCS11Error("Session to card missing")
 
