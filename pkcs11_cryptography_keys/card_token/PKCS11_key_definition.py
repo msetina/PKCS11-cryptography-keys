@@ -22,6 +22,25 @@ class OperationTypes(Enum):
     RECOVER = 5
 
 
+x509Operations = {
+    OperationTypes.SIGN: [
+        "digital_signature",
+        "content_commitment",
+        "crl_sign",
+    ],  # key_cert_sign
+    OperationTypes.CRYPT: ["data_encipherment"],
+    OperationTypes.DERIVE: [
+        "key_agreement"
+    ],  # "encipher_only","decipher_only",
+    OperationTypes.WRAP: ["key_encipherment"],
+    OperationTypes.RECOVER: ["digital_signature", "content_commitment"],
+}
+
+
+# key_cert_sign=False,
+# crl_sign=False,
+
+
 _key_classes = {
     PyKCS11.CKO_PRIVATE_KEY: KeyObjectTypes.private,
     PyKCS11.CKO_PUBLIC_KEY: KeyObjectTypes.public,
@@ -85,6 +104,30 @@ class PKCS11KeyUsage(object):
     def get(self, key: OperationTypes) -> bool | None:
         return self._usage.get(key, False)
 
+    # Prepares a dict of parameters for X509.KeyUsage
+    def get_X509_usage(self, is_ca: bool) -> dict:
+        usages = {
+            "digital_signature": False,
+            "content_commitment": False,
+            "key_encipherment": False,
+            "data_encipherment": False,
+            "key_agreement": False,
+            "key_cert_sign": False,
+            "crl_sign": False,
+            "encipher_only": False,
+            "decipher_only": False,
+        }
+        for k, v in self._usage.items():
+            if k in x509Operations:
+                uses = x509Operations[k]
+                for u in uses:
+                    if v:
+                        usages[u] = True
+                        if is_ca and u == "digital_signature":
+                            usages["key_cert_sign"] = True
+
+        return usages
+
     def __eq__(self, value: object) -> bool:
         ret = False
         if isinstance(value, PKCS11KeyUsage):
@@ -106,6 +149,16 @@ class PKCS11KeyUsageAll(PKCS11KeyUsage):
 class PKCS11KeyUsageAllNoDerive(PKCS11KeyUsage):
     def __init__(self) -> None:
         super().__init__(True, True, True, True, False)
+
+
+class PKCS11KeyUsageSignature(PKCS11KeyUsage):
+    def __init__(self) -> None:
+        super().__init__(False, True, False, True, False)
+
+
+class PKCS11KeyUsageEncyrption(PKCS11KeyUsage):
+    def __init__(self) -> None:
+        super().__init__(True, False, True, False, False)
 
 
 class PKCS11KeyIdent(object):
