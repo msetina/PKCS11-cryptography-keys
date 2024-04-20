@@ -88,11 +88,7 @@ class TestCertificates:
             )
             with key_session as PK:
                 if PK:
-                    public_key = PK.public_key()
-                    pub_nums = public_key.public_numbers()
-                    pub_k = RSAPublicNumbers.public_key(
-                        pub_nums, default_backend
-                    )
+                    pub_k = PK.public_key()
                     builder = builder.public_key(pub_k)
                     builder = builder.issuer_name(
                         x509.Name(
