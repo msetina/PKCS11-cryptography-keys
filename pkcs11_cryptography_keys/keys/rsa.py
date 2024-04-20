@@ -7,7 +7,6 @@ from typing import Dict
 
 import PyKCS11
 from cryptography.exceptions import InvalidSignature, UnsupportedAlgorithm
-from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import _serialization, hashes
 from cryptography.hazmat.primitives._asymmetric import AsymmetricPadding
 from cryptography.hazmat.primitives.asymmetric import utils as asym_utils
@@ -23,7 +22,6 @@ from cryptography.hazmat.primitives.asymmetric.rsa import (
     RSAPublicKey,
     RSAPublicNumbers,
 )
-from cryptography.hazmat.primitives.serialization import load_der_public_key
 
 from pkcs11_cryptography_keys.card_token.PKCS11_token import PKCS11Token
 
@@ -258,12 +256,8 @@ class RSAPublicKeyPKCS11:
         format: _serialization.PublicFormat,
     ) -> bytes:
         if self._session is not None:
-
-            attributes = self._session.getAttributeValue(
-                self._public_key, [PyKCS11.CKA_VALUE]
-            )
-            pubkey = bytes(attributes[0])
-            key = load_der_public_key(pubkey, default_backend())
+            pn = self.public_numbers()
+            key = pn.public_key()
             return key.public_bytes(encoding, format)
         else:
             raise PyKCS11.PyKCS11Error("Session to card missing")
