@@ -2,6 +2,9 @@ from pkcs11_cryptography_keys.card_token.PKCS11_key_definition import (
     KeyTypes as KeyTypes,
 )
 from pkcs11_cryptography_keys.card_token.PKCS11_key_definition import (
+    OperationTypes as OperationTypes,
+)
+from pkcs11_cryptography_keys.card_token.PKCS11_key_definition import (
     PKCS11KeyUsage as PKCS11KeyUsage,
 )
 from pkcs11_cryptography_keys.card_token.PKCS11_key_definition import (
@@ -9,6 +12,12 @@ from pkcs11_cryptography_keys.card_token.PKCS11_key_definition import (
 )
 from pkcs11_cryptography_keys.card_token.PKCS11_key_definition import (
     PKCS11KeyUsageAllNoDerive as PKCS11KeyUsageAllNoDerive,
+)
+from pkcs11_cryptography_keys.card_token.PKCS11_key_definition import (
+    PKCS11KeyUsageEncyrption as PKCS11KeyUsageEncyrption,
+)
+from pkcs11_cryptography_keys.card_token.PKCS11_key_definition import (
+    PKCS11KeyUsageSignature as PKCS11KeyUsageSignature,
 )
 from pkcs11_cryptography_keys.sessions.PKCS11_admin_session import (
     PKCS11AdminSession as PKCS11AdminSession,
