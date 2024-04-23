@@ -19,6 +19,12 @@ from pkcs11_cryptography_keys.card_token.PKCS11_key_definition import (
 from pkcs11_cryptography_keys.card_token.PKCS11_key_definition import (
     PKCS11KeyUsageSignature as PKCS11KeyUsageSignature,
 )
+from pkcs11_cryptography_keys.keys import (
+    PKCS11PrivateKeyTypes as PKCS11PrivateKeyTypes,
+)
+from pkcs11_cryptography_keys.keys import (
+    PKCS11PublicKeyTypes as PKCS11PublicKeyTypes,
+)
 from pkcs11_cryptography_keys.sessions.PKCS11_admin_session import (
     PKCS11AdminSession as PKCS11AdminSession,
 )
