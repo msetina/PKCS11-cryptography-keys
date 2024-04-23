@@ -110,7 +110,7 @@ class TestCertificates:
 
             admin_session = PKCS11AdminSession(_pkcs11lib, label, "1234", True)
             with admin_session as token_admin:
-                token_admin.write_certificate(subject, certificate)
+                token_admin.write_certificate(certificate)
 
             slot_session = PKCS11SlotSession(_pkcs11lib, label, "1234")
             cnt = 0

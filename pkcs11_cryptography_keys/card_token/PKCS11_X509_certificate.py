@@ -1,7 +1,7 @@
 import PyKCS11
 from asn1crypto.core import UTF8String
 from cryptography.hazmat.primitives.serialization import Encoding
-from cryptography.x509 import Certificate, Name
+from cryptography.x509 import Certificate
 
 from pkcs11_cryptography_keys.card_token.PKCS11_key_definition import (
     KeyObjectTypes,
@@ -18,12 +18,10 @@ class PKCS11X509Certificate(PKCS11KeyIdent):
     ):
         PKCS11KeyIdent.__init__(self, key_id, label)
 
-    def get_certificate_template(
-        self, subject: Name, certificate: Certificate
-    ) -> list:
+    def get_certificate_template(self, certificate: Certificate) -> list:
         template = []
         if KeyObjectTypes.certificate in _key_head:
-
+            subject = certificate.subject
             sub = UTF8String(subject.rfc4514_string())
             cert = certificate.public_bytes(Encoding.DER)
             template.extend(_key_head[KeyObjectTypes.certificate])

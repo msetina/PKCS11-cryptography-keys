@@ -106,7 +106,6 @@ class PKCS11TokenAdmin:
     # Write certificate to the card
     def write_certificate(
         self,
-        subject: Name,
         certificate: Certificate,
         keyid: bytes | None = None,
         label: str | None = None,
@@ -117,7 +116,7 @@ class PKCS11TokenAdmin:
                 cert = PKCS11X509Certificate(keyid, label)
             else:
                 cert = PKCS11X509Certificate(self._keyid, self._label)
-            cert_template = cert.get_certificate_template(subject, certificate)
+            cert_template = cert.get_certificate_template(certificate)
             # create the certificate object
             self._session.createObject(cert_template)
             ret = True
