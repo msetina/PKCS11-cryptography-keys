@@ -37,6 +37,12 @@ from pkcs11_cryptography_keys.sessions.PKCS11_slot_admin_session import (
 from pkcs11_cryptography_keys.sessions.PKCS11_slot_session import (
     PKCS11SlotSession as PKCS11SlotSession,
 )
+from pkcs11_cryptography_keys.sessions.PKCS11_uri_admin_session import (
+    PKCS11URIAdminSession as PKCS11URIAdminSession,
+)
+from pkcs11_cryptography_keys.sessions.PKCS11_uri_key_session import (
+    PKCS11URIKeySession as PKCS11URIKeySession,
+)
 from pkcs11_cryptography_keys.utils.listers import (
     list_token_admins as list_token_admins,
 )
