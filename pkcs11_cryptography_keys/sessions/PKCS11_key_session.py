@@ -1,6 +1,19 @@
 from importlib import import_module
 
-import PyKCS11
+from PyKCS11 import (
+    CKA_CLASS,
+    CKA_ID,
+    CKA_KEY_TYPE,
+    CKA_LABEL,
+    CKF_LOGIN_REQUIRED,
+    CKF_RW_SESSION,
+    CKF_SERIAL_SESSION,
+    CKK_ECDSA,
+    CKK_RSA,
+    CKO_PRIVATE_KEY,
+    PyKCS11Lib,
+    Session,
+)
 
 from pkcs11_cryptography_keys.keys.ec import EllipticCurvePrivateKeyPKCS11
 from pkcs11_cryptography_keys.keys.rsa import RSAPrivateKeyPKCS11
@@ -8,8 +21,8 @@ from pkcs11_cryptography_keys.keys.rsa import RSAPrivateKeyPKCS11
 from .PKCS11_session import PKCS11Session
 
 _key_modules = {
-    PyKCS11.CKK_ECDSA: "pkcs11_cryptography_keys.keys.ec",
-    PyKCS11.CKK_RSA: "pkcs11_cryptography_keys.keys.rsa",
+    CKK_ECDSA: "pkcs11_cryptography_keys.keys.ec",
+    CKK_RSA: "pkcs11_cryptography_keys.keys.rsa",
 }
 
 
@@ -34,18 +47,18 @@ class PKCS11KeySession(PKCS11Session):
             if key_label is None:
                 private_key = self._session.findObjects(
                     [
-                        (PyKCS11.CKA_CLASS, PyKCS11.CKO_PRIVATE_KEY),
+                        (CKA_CLASS, CKO_PRIVATE_KEY),
                     ]
                 )[0]
             else:
                 private_key = self._session.findObjects(
                     [
-                        (PyKCS11.CKA_CLASS, PyKCS11.CKO_PRIVATE_KEY),
-                        (PyKCS11.CKA_LABEL, key_label),
+                        (CKA_CLASS, CKO_PRIVATE_KEY),
+                        (CKA_LABEL, key_label),
                     ]
                 )[0]
             attrs = self._session.getAttributeValue(
-                private_key, [PyKCS11.CKA_KEY_TYPE, PyKCS11.CKA_ID]
+                private_key, [CKA_KEY_TYPE, CKA_ID]
             )
             key_type = attrs[0]
             keyid = bytes(attrs[1])
@@ -58,14 +71,14 @@ class PKCS11KeySession(PKCS11Session):
         self,
     ) -> EllipticCurvePrivateKeyPKCS11 | RSAPrivateKeyPKCS11 | None:
         private_key = None
-        library = PyKCS11.PyKCS11Lib()
+        library = PyKCS11Lib()
         library.load(self._pksc11_lib)
         slots = library.getSlotList(tokenPresent=True)
         slot = None
         self._login_required = False
         for sl in slots:
             ti = library.getTokenInfo(sl)
-            if ti.flags & PyKCS11.CKF_LOGIN_REQUIRED != 0:
+            if ti.flags & CKF_LOGIN_REQUIRED != 0:
                 self._login_required = True
             if self._token_label is None:
                 slot = sl
@@ -74,7 +87,7 @@ class PKCS11KeySession(PKCS11Session):
                 break
         if slot is not None:
             self._session = library.openSession(
-                slot, PyKCS11.CKF_SERIAL_SESSION | PyKCS11.CKF_RW_SESSION
+                slot, CKF_SERIAL_SESSION | CKF_RW_SESSION
             )
             if self._session is not None:
                 if self._login_required:
