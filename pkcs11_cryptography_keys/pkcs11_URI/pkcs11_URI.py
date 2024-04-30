@@ -17,6 +17,8 @@ from PyKCS11 import (
     Session,
 )
 
+from pkcs11_cryptography_keys.utils.pin_4_token import Pin4Token, PinTypes
+
 from .definitions import (
     CK_INFO_translation,
     CK_SESSION_INFO_translation,
@@ -128,7 +130,9 @@ class PKCS11URI(object):
         else:
             raise Exception("Provided string is not an URI")
 
-    def get_session(self, norm_user: bool = True) -> Session:
+    def get_session(
+        self, norm_user: bool = True, pin_getter: Pin4Token | None = None
+    ) -> Session:
         session = None
         library = PyKCS11Lib()
         if "module-path" in self._query:
@@ -199,11 +203,18 @@ class PKCS11URI(object):
                     pin = self._query["pin-value"]
                 if login_required:
                     if pin is None:
-                        if norm_user:
-                            pin = input("Please enter PIN:")
+                        if pin_getter is None:
+                            pg = Pin4Token("Unknown")
+                            pin = pg.get_pin(
+                                PinTypes.NORM_USER
+                                if norm_user
+                                else PinTypes.SO_USER
+                            )
                         else:
-                            pin = input(
-                                "Please enter security officer PIN(SO PIN):"
+                            pin = pin_getter.get_pin(
+                                PinTypes.NORM_USER
+                                if norm_user
+                                else PinTypes.SO_USER
                             )
                     if pin is not None:
                         if norm_user:

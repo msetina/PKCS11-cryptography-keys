@@ -18,6 +18,7 @@ from PyKCS11 import (
 from pkcs11_cryptography_keys.keys.ec import EllipticCurvePrivateKeyPKCS11
 from pkcs11_cryptography_keys.keys.rsa import RSAPrivateKeyPKCS11
 from pkcs11_cryptography_keys.pkcs11_URI.pkcs11_URI import PKCS11URI
+from pkcs11_cryptography_keys.utils.pin_4_token import Pin4Token
 
 from .PKCS11_session import PKCS11Session
 
@@ -32,9 +33,11 @@ class PKCS11URIKeySession(PKCS11Session):
     def __init__(
         self,
         uri: str,
+        pin_getter: Pin4Token | None = None,
     ):
         super().__init__()
         self._uri = uri
+        self._pin_getter = pin_getter
 
     # get private key reference and get key type and keyid for it
     # def _get_private_key(self, key_label: str | None = None) -> tuple:
@@ -68,7 +71,7 @@ class PKCS11URIKeySession(PKCS11Session):
         private_key = None
         pkcs11_uri = PKCS11URI.parse(self._uri)
         self._login_required = False
-        self._session = pkcs11_uri.get_session()
+        self._session = pkcs11_uri.get_session(pin_getter=self._pin_getter)
         if self._session is not None:
             keyid, label, key_type, pk_ref = pkcs11_uri.get_private_key(
                 self._session

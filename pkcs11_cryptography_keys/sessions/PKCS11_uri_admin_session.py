@@ -15,6 +15,7 @@ from pkcs11_cryptography_keys.card_token.PKCS11_token_admin import (
     PKCS11TokenAdmin,
 )
 from pkcs11_cryptography_keys.pkcs11_URI.pkcs11_URI import PKCS11URI
+from pkcs11_cryptography_keys.utils.pin_4_token import Pin4Token
 
 from .PKCS11_session import PKCS11Session
 
@@ -25,10 +26,12 @@ class PKCS11URIAdminSession(PKCS11Session):
         self,
         uri: str,
         norm_user: bool = False,
+        pin_getter: Pin4Token | None = None,
     ):
         super().__init__()
         self._norm_user = norm_user
         self._uri = uri
+        self._pin_getter = pin_getter
 
     # get private key id and label
     def _get_private_key_info(self, key_label: str | None = None) -> tuple:
@@ -66,7 +69,9 @@ class PKCS11URIAdminSession(PKCS11Session):
     def open(self) -> PKCS11TokenAdmin | None:
         pkcs11_uri = PKCS11URI.parse(self._uri)
         self._login_required = False
-        self._session = pkcs11_uri.get_session(self._norm_user)
+        self._session = pkcs11_uri.get_session(
+            self._norm_user, self._pin_getter
+        )
         if self._session is not None:
             keyid, label, _, _ = pkcs11_uri.get_private_key(self._session)
             if keyid is None:

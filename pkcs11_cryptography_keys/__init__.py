@@ -49,3 +49,5 @@ from pkcs11_cryptography_keys.utils.listers import (
 from pkcs11_cryptography_keys.utils.listers import (
     list_token_labels as list_token_labels,
 )
+from pkcs11_cryptography_keys.utils.pin_4_token import Pin4Token as Pin4Token
+from pkcs11_cryptography_keys.utils.pin_4_token import PinTypes as PinTypes
