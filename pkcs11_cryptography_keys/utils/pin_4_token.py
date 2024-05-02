@@ -32,14 +32,16 @@ class Pin4Token(object):
         self._name = name
         self._callbacks = callbacks
 
-    def get_pin(self, pin_type: PinTypes):
+    def get_pin(self, pin_type: PinTypes) -> str:
         call = None
+        ret = None
         if self._callbacks is not None and pin_type in self._callbacks:
             call = self._callbacks[pin_type]
         else:
             call = _default_calls[pin_type]
 
         if call is not None:
-            call(self._name)
+            ret = call(self._name)
         else:
             raise Exception("Pin callback not set!")
+        return ret
