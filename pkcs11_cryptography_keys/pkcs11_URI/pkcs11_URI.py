@@ -244,6 +244,10 @@ class PKCS11URI(object):
                             if mi.flags & mf != 0:
                                 op = mi.flags_dict[mf].replace("CKF_", "")
                                 self._operations.append((m, op))
+            else:
+                self._logger.info("Session could not be opened.")
+        else:
+            self._logger.info("Required slot was not found.")
         return session
 
     def gen_operations(self):
