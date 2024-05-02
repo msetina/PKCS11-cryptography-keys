@@ -1,3 +1,5 @@
+from logging import Logger
+
 from PyKCS11 import (
     CKA_CLASS,
     CKA_ID,
@@ -27,8 +29,9 @@ class PKCS11URIAdminSession(PKCS11Session):
         uri: str,
         norm_user: bool = False,
         pin_getter: Pin4Token | None = None,
+        logger: Logger | None = None,
     ):
-        super().__init__()
+        super().__init__(logger)
         self._norm_user = norm_user
         self._uri = uri
         self._pin_getter = pin_getter
@@ -67,7 +70,7 @@ class PKCS11URIAdminSession(PKCS11Session):
     # Open session with the card
     # Uses pin if needed, reads permited operations(mechanisms)
     def open(self) -> PKCS11TokenAdmin | None:
-        pkcs11_uri = PKCS11URI.parse(self._uri)
+        pkcs11_uri = PKCS11URI.parse(self._uri, self._logger)
         self._login_required = False
         self._session = pkcs11_uri.get_session(
             self._norm_user, self._pin_getter

@@ -1,3 +1,5 @@
+from logging import Logger
+
 from PyKCS11 import (
     CKA_CLASS,
     CKA_ID,
@@ -28,8 +30,9 @@ class PKCS11AdminSession(PKCS11Session):
         norm_user: bool = False,
         key_label: str | None = None,
         key_id: bytes | None = None,
+        logger: Logger | None = None,
     ):
-        super().__init__()
+        super().__init__(logger)
         self._key_id = key_id
         self._norm_user = norm_user
         self._pksc11_lib = pksc11_lib

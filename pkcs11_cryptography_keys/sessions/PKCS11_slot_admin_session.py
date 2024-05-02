@@ -1,3 +1,5 @@
+from logging import Logger
+
 from PyKCS11 import (
     CKF_LOGIN_REQUIRED,
     CKF_RW_SESSION,
@@ -20,8 +22,9 @@ class PKCS11SlotAdminSession(PKCS11Session):
         token_label: str,
         pin: str,
         norm_user: bool = False,
+        logger: Logger | None = None,
     ):
-        super().__init__()
+        super().__init__(logger)
         self._pksc11_lib = pksc11_lib
         self._token_label = token_label
         self._pin = pin

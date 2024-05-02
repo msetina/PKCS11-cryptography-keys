@@ -1,4 +1,5 @@
 from importlib import import_module
+from logging import Logger
 
 from PyKCS11 import (
     CKA_CLASS,
@@ -34,8 +35,9 @@ class PKCS11URIKeySession(PKCS11Session):
         self,
         uri: str,
         pin_getter: Pin4Token | None = None,
+        logger: Logger | None = None,
     ):
-        super().__init__()
+        super().__init__(logger)
         self._uri = uri
         self._pin_getter = pin_getter
 
@@ -69,7 +71,7 @@ class PKCS11URIKeySession(PKCS11Session):
         self,
     ) -> EllipticCurvePrivateKeyPKCS11 | RSAPrivateKeyPKCS11 | None:
         private_key = None
-        pkcs11_uri = PKCS11URI.parse(self._uri)
+        pkcs11_uri = PKCS11URI.parse(self._uri, self._logger)
         self._login_required = False
         self._session = pkcs11_uri.get_session(pin_getter=self._pin_getter)
         if self._session is not None:

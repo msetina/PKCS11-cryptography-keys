@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from logging import Logger
 from re import compile
 from typing import Any
 from urllib.parse import unquote
@@ -29,7 +30,12 @@ from .definitions import (
 
 
 class PKCS11URI(object):
-    def __init__(self, location: dict[str, str], query: dict[str, str]) -> None:
+    def __init__(
+        self,
+        location: dict[str, str],
+        query: dict[str, str],
+        logger: Logger | None = None,
+    ) -> None:
         self._PKCS11_key_translation = {
             "object": (CKA_LABEL, self.__get_object_value),
             "id": (CKA_ID, self.__get_id_value),
@@ -38,6 +44,7 @@ class PKCS11URI(object):
         self._location: dict[str, str] = location
         self._query: dict[str, str] = query
         self._operations: list[tuple[int, str]] = []
+        self._logger = logger if logger is not None else Logger("PKCS11 uri")
 
     def __get_object_value(self, value: str):
         return value
@@ -81,7 +88,9 @@ class PKCS11URI(object):
     def parse(
         cls,
         uri: str,
+        logger: Logger | None,
     ) -> PKCS11URI:
+        local_logger = logger if logger is not None else Logger("URI parser")
         grob = compile("(.+?)(\?.+?)?(#.+)?$")
         m = grob.match(uri)
         if m is not None:
@@ -106,7 +115,7 @@ class PKCS11URI(object):
                                 location[rest[0:b]] = unquote(rest[b + 1 : a])
                                 rest = rest[a + 1 :]
                     else:
-                        return cls({}, {})
+                        return cls({}, {}, local_logger)
                 if g[1] is not None:
                     if g[1].startswith("?"):
                         rest = g[1][1:]
@@ -124,7 +133,7 @@ class PKCS11URI(object):
 
                     else:
                         raise Exception("Bad query in URI")
-                return cls(location, query)
+                return cls(location, query, local_logger)
             else:
                 raise Exception("URI was not parsed properly")
         else:
@@ -254,8 +263,9 @@ class PKCS11URI(object):
             objs = session.findObjects(template)
             if objs is not None and len(objs) > 0:
                 if len(objs) > 1:
-                    # TODO: write to log that we got more than one key
-                    print("There is more to what meets the eye.")
+                    self._logger.info(
+                        "There multiple keys with provided URI description."
+                    )
                 key = objs[0]
                 attrs = session.getAttributeValue(key, [CKA_KEY_TYPE, CKA_ID])
                 key_type = attrs[0]
@@ -297,8 +307,9 @@ class PKCS11URI(object):
             objs = session.findObjects(template)
             if objs is not None and len(objs) > 0:
                 if len(objs) > 1:
-                    # TODO: write to log that we got more than one key
-                    print("There is more to what meets the eye.")
+                    self._logger.info(
+                        "There multiple keys with provided URI description."
+                    )
                 key = objs[0]
                 attrs = session.getAttributeValue(
                     key, [CKA_KEY_TYPE, CKA_ID, CKA_LABEL]

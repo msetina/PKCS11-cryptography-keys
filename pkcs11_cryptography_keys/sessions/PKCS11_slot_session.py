@@ -1,3 +1,5 @@
+from logging import Logger
+
 from PyKCS11 import (
     CKF_LOGIN_REQUIRED,
     CKF_RW_SESSION,
@@ -13,8 +15,14 @@ from .PKCS11_session import PKCS11Session
 
 # contextmanager to facilitate connecting to source
 class PKCS11SlotSession(PKCS11Session):
-    def __init__(self, pksc11_lib: str, token_label: str, pin: str):
-        super().__init__()
+    def __init__(
+        self,
+        pksc11_lib: str,
+        token_label: str,
+        pin: str,
+        logger: Logger | None = None,
+    ):
+        super().__init__(logger)
         self._pksc11_lib = pksc11_lib
         self._token_label = token_label
         self._pin = pin
