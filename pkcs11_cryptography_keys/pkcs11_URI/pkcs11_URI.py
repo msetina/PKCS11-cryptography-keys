@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from logging import Logger
+from logging import Logger, getLogger
 from re import compile
 from typing import Any
 from urllib.parse import unquote
@@ -44,7 +44,7 @@ class PKCS11URI(object):
         self._location: dict[str, str] = location
         self._query: dict[str, str] = query
         self._operations: list[tuple[int, str]] = []
-        self._logger = logger if logger is not None else Logger("PKCS11 uri")
+        self._logger = logger if logger is not None else getLogger("PKCS11 uri")
 
     def __get_object_value(self, value: str):
         return value
@@ -90,7 +90,7 @@ class PKCS11URI(object):
         uri: str,
         logger: Logger | None,
     ) -> PKCS11URI:
-        local_logger = logger if logger is not None else Logger("URI parser")
+        local_logger = logger if logger is not None else getLogger("URI parser")
         grob = compile("(.+?)(\?.+?)?(#.+)?$")
         m = grob.match(uri)
         if m is not None:

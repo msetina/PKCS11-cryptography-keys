@@ -1,10 +1,12 @@
-from logging import Logger
+from logging import Logger, getLogger
 
 
 # contextmanager to facilitate connecting to card token
 class PKCS11Session(object):
     def __init__(self, logger: Logger | None):
-        self._logger = logger if logger is not None else Logger("PKCS11 sesion")
+        self._logger = (
+            logger if logger is not None else getLogger("PKCS11 session")
+        )
         # session for interacton with the card
         self._session = None
         # does user need to be logged in to use session
