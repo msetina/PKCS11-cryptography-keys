@@ -7,13 +7,15 @@ class PinTypes(Enum):
     NORM_USER = 2
 
 
-def _get_norm_user_pin(name: str) -> str:
-    return input("Please enter PIN for {0}:".format(name))
+def _get_norm_user_pin(name: str, reason: str) -> str:
+    return input("{0} Please enter PIN for {1}:".format(reason, name))
 
 
-def _get_so_user_pin(name: str) -> str:
+def _get_so_user_pin(name: str, reason: str) -> str:
     return input(
-        "Please enter security officer PIN(SO PIN) for {0}:".format(name)
+        "{0} Please enter security officer PIN(SO PIN) for {1}:".format(
+            reason, name
+        )
     )
 
 
@@ -27,9 +29,11 @@ class Pin4Token(object):
     def __init__(
         self,
         name: str,
-        callbacks: dict[PinTypes, Callable[[str], str]] | None = None,
+        reason: str,
+        callbacks: dict[PinTypes, Callable[[str, str], str]] | None = None,
     ) -> None:
         self._name = name
+        self._reason = reason
         self._callbacks = callbacks
 
     def get_pin(self, pin_type: PinTypes) -> str:
@@ -41,7 +45,7 @@ class Pin4Token(object):
             call = _default_calls[pin_type]
 
         if call is not None:
-            ret = call(self._name)
+            ret = call(self._name, self._reason)
         else:
             raise Exception("Pin callback not set!")
         return ret

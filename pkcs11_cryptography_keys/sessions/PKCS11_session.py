@@ -15,7 +15,7 @@ class PKCS11Session(object):
         self.close()
         if exc_type is not None:
             self._logger.error(
-                "PKCS11 session experience an error : %s",
+                "PKCS11 session experienced an error : %s",
                 exc_value,
                 exc_info=True,
             )
@@ -28,7 +28,7 @@ class PKCS11Session(object):
         self.close()
         if exc_type is not None:
             self._logger.error(
-                "PKCS11 session experience an error : %s",
+                "PKCS11 session experienced an error : %s",
                 exc_value,
                 exc_info=True,
             )

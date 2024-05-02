@@ -213,7 +213,9 @@ class PKCS11URI(object):
                 if login_required:
                     if pin is None:
                         if pin_getter is None:
-                            pg = Pin4Token("Unknown")
+                            pg = Pin4Token(
+                                "Unknown", "We want to do something with a key."
+                            )
                             pin = pg.get_pin(
                                 PinTypes.NORM_USER
                                 if norm_user
