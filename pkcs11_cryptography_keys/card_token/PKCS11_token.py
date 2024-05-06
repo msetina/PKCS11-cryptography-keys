@@ -139,5 +139,5 @@ class PKCS11Token:
             attributes = self._session.getAttributeValue(
                 self._private_key, [PyKCS11.CKA_ID, PyKCS11.CKA_LABEL]
             )
-            return attributes[0], attributes[1]
+            return bytes(attributes[0]), attributes[1].strip().strip("\x00")
         return None, None
