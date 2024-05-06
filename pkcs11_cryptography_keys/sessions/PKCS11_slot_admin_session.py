@@ -19,8 +19,8 @@ class PKCS11SlotAdminSession(PKCS11Session):
     def __init__(
         self,
         pksc11_lib: str,
-        token_label: str,
-        pin: str,
+        token_label: str | None = None,
+        pin: str | None = None,
         norm_user: bool = False,
         logger: Logger | None = None,
     ):
