@@ -13,6 +13,7 @@ from PyKCS11 import (
     CKF_LOGIN_REQUIRED,
     CKF_RW_SESSION,
     CKF_SERIAL_SESSION,
+    CKF_TOKEN_INITIALIZED,
     CKU_SO,
     PyKCS11Lib,
     Session,
@@ -166,12 +167,23 @@ class PKCS11URI(object):
             si = library.getSlotInfo(sl)
             if ti.flags & CKF_LOGIN_REQUIRED != 0:
                 login_required = True
+            if not ti.flags & CKF_TOKEN_INITIALIZED != 0:
+                del ti
+                del si
+                continue
             found = False
             for tag in self._location:
                 if tag in CK_SLOT_INFO_translation:
                     ck_tag = CK_SLOT_INFO_translation[tag]
                     found = True
-                    if self._location[tag] != si.__dict__[ck_tag].strip():
+                    if self._location[tag] != si.__dict__[ck_tag].strip().strip(
+                        "\x00"
+                    ):
+                        self._logger.info(
+                            "On slot '{0}' did not match '{1}'".format(
+                                self._location[tag], si.__dict__[ck_tag].strip()
+                            )
+                        )
                         slot = None
                         break
                     else:
@@ -179,11 +191,20 @@ class PKCS11URI(object):
                 if tag in CK_TOKEN_INFO_translation:
                     ck_tag = CK_TOKEN_INFO_translation[tag]
                     found = True
-                    if self._location[tag] != ti.__dict__[ck_tag].strip():
+                    if self._location[tag] != ti.__dict__[ck_tag].strip().strip(
+                        "\x00"
+                    ):
+                        self._logger.info(
+                            "On token '{0}' did not match '{1}'".format(
+                                self._location[tag], ti.__dict__[ck_tag].strip()
+                            )
+                        )
                         slot = None
                         break
                     else:
                         slot = sl
+            del ti
+            del si
             if found:
                 if slot is None:
                     found = False
