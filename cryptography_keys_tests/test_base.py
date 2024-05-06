@@ -3,6 +3,11 @@ _pkcs11lib = "/usr/lib/softhsm/libsofthsm2.so"
 
 class TestBasic:
 
+    def test_init_token(self):
+        from pkcs11_cryptography_keys import create_token
+
+        create_token(_pkcs11lib, "123456", "A token", "1234")
+
     def test_labels(self):
         from pkcs11_cryptography_keys import list_token_labels
 
