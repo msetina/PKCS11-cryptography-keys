@@ -1,6 +1,6 @@
 from logging import Logger
 
-import PyKCS11
+from PyKCS11 import CKF_TOKEN_INITIALIZED, PyKCS11Lib
 
 from pkcs11_cryptography_keys.sessions.PKCS11_admin_session import (
     PKCS11AdminSession,
@@ -14,12 +14,12 @@ def list_token_admins(
     norm_user: bool = False,
     logger: Logger | None = None,
 ):
-    library = PyKCS11.PyKCS11Lib()
+    library = PyKCS11Lib()
     library.load(pksc11_lib)
     slots = library.getSlotList(tokenPresent=True)
     for sl in slots:
         ti = library.getTokenInfo(sl)
-        if ti.flags & PyKCS11.CKF_TOKEN_INITIALIZED != 0:
+        if ti.flags & CKF_TOKEN_INITIALIZED != 0:
             yield PKCS11AdminSession(
                 pksc11_lib, ti.label.strip(), pin, norm_user, logger=logger
             )
@@ -27,10 +27,10 @@ def list_token_admins(
 
 # Support function to list token labels
 def list_token_labels(pksc11_lib: str):
-    library = PyKCS11.PyKCS11Lib()
+    library = PyKCS11Lib()
     library.load(pksc11_lib)
     slots = library.getSlotList(tokenPresent=True)
     for sl in slots:
         ti = library.getTokenInfo(sl)
-        if ti.flags & PyKCS11.CKF_TOKEN_INITIALIZED != 0:
+        if ti.flags & CKF_TOKEN_INITIALIZED != 0:
             yield ti.label.strip()
