@@ -1,7 +1,8 @@
 from importlib import import_module
+from logging import Logger, getLogger
 
 import PyKCS11
-from cryptography.x509 import Certificate, Name
+from cryptography.x509 import Certificate
 
 from pkcs11_cryptography_keys.card_token.PKCS11_key_definition import (
     KeyObjectTypes,
@@ -17,13 +18,16 @@ from pkcs11_cryptography_keys.keys.rsa import RSAPrivateKeyPKCS11
 
 # Token representation
 class PKCS11TokenAdmin:
-    def __init__(self, session, keyid: bytes, label: str):
+    def __init__(self, session, keyid: bytes, label: str, logger: Logger):
         # session for interacton with the card
         self._session = session
         # id of key read from private key
         self._keyid = keyid
         # label of the key
         self._label = label
+        self._logger = (
+            logger if logger is not None else getLogger("PKCS11TokenAdmin")
+        )
 
     # Delete keypair from the card
     def delete_key_pair(self) -> bool:
@@ -37,6 +41,7 @@ class PKCS11TokenAdmin:
             )
             for pub_o in public_objects:
                 self._session.destroyObject(pub_o)
+                self._logger.info("Public key deleted")
             private_objects = self._session.findObjects(
                 [
                     (PyKCS11.CKA_CLASS, PyKCS11.CKO_PRIVATE_KEY),
@@ -45,6 +50,7 @@ class PKCS11TokenAdmin:
             )
             for priv_o in private_objects:
                 self._session.destroyObject(priv_o)
+                self._logger.info("Private key deleted")
                 ret = True
         return ret
 
@@ -60,6 +66,7 @@ class PKCS11TokenAdmin:
             )
             for co in cert_objects:
                 self._session.destroyObject(co)
+                self._logger.info("Certificate deleted")
                 ret = True
         return ret
 
@@ -101,6 +108,10 @@ class PKCS11TokenAdmin:
                     raise Exception(
                         "Could not find module for {0}".format(key_module)
                     )
+            else:
+                self._logger.info("Keypair definition missing")
+        else:
+            self._logger.info("PKCS11 session not present")
         return ret
 
     # Write certificate to the card
@@ -119,5 +130,8 @@ class PKCS11TokenAdmin:
             cert_template = cert.get_certificate_template(certificate)
             # create the certificate object
             self._session.createObject(cert_template)
+            self._logger.info("Certificate written")
             ret = True
+        else:
+            self._logger.info("PKCS11 session not present")
         return ret

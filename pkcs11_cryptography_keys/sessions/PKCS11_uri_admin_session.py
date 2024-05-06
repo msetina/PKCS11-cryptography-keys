@@ -85,7 +85,9 @@ class PKCS11URIAdminSession(PKCS11Session):
             if label is None:
                 label = "default"
             if keyid is not None:
-                return PKCS11TokenAdmin(self._session, keyid, label)
+                return PKCS11TokenAdmin(
+                    self._session, keyid, label, self._logger
+                )
         return None
 
     # context manager API

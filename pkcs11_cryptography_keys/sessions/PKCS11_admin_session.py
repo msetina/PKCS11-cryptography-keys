@@ -114,14 +114,19 @@ class PKCS11AdminSession(PKCS11Session):
                             label = "default"
                         else:
                             label = self._key_label
-                    return PKCS11TokenAdmin(self._session, keyid, label)
+                    return PKCS11TokenAdmin(
+                        self._session, keyid, label, self._logger
+                    )
                 else:
                     if self._key_label is None:
                         self._key_label = b"\x01"
                     if self._key_id is None:
                         self._key_id = self._key_label.encode()
                     return PKCS11TokenAdmin(
-                        self._session, self._key_id, self._key_label
+                        self._session,
+                        self._key_id,
+                        self._key_label,
+                        self._logger,
                     )
         return None
 
