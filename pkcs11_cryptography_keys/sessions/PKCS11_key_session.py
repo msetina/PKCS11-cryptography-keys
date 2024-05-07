@@ -65,6 +65,8 @@ class PKCS11KeySession(PKCS11Session):
             key_type = attrs[0]
             keyid = bytes(attrs[1])
             return keyid, key_type, private_key
+        else:
+            self._logger.info("PKCS11 session is ot present")
         return None, None, None
 
     # Open session with the card
@@ -99,6 +101,10 @@ class PKCS11KeySession(PKCS11Session):
                 module_name = _key_modules.get(key_type, None)
                 if module_name is not None:
                     module = import_module(module_name)
+                else:
+                    self._logger.info(
+                        "Module for key type {0} is not setup".format(key_type)
+                    )
                 if module is not None:
                     private_key = module.get_key(
                         self._session,
@@ -112,7 +118,10 @@ class PKCS11KeySession(PKCS11Session):
                             if mi.flags & mf != 0:
                                 op = mi.flags_dict[mf].replace("CKF_", "")
                                 private_key.fill_operations(m, op)
-
+            else:
+                self._logger.info("PKCS11 session could not be opened")
+        else:
+            self._logger.info("Slot could not be found")
         return private_key
 
     # context manager API

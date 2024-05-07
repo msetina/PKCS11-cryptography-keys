@@ -67,8 +67,12 @@ class PKCS11AdminSession(PKCS11Session):
                     [CKA_ID, CKA_LABEL],
                 )
                 keyid = bytes(attrs[0])
-                label = attrs[1]
+                label = attrs[1].strip().strip("\x00")
                 return keyid, label
+            else:
+                self._logger.info("Private key not found")
+        else:
+            self._logger.info("PKCS11 session not present")
         return None, None
 
     # Open session with the card
@@ -128,6 +132,10 @@ class PKCS11AdminSession(PKCS11Session):
                         self._key_label,
                         self._logger,
                     )
+            else:
+                self._logger.info("PKCS11 session could not be opened")
+        else:
+            self._logger.info("Slot could not be found")
         return None
 
     # context manager API

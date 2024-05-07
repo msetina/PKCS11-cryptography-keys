@@ -58,6 +58,10 @@ class PKCS11SlotAdminSession(PKCS11Session):
                     else:
                         self._session.login(self._pin, CKU_SO)
                 return PKCS11SlotAdmin(self._session)
+            else:
+                self._logger.info("PKCS11 sessin could not be opened")
+        else:
+            self._logger.info("Slot could not be found")
         return None
 
     # context manager API

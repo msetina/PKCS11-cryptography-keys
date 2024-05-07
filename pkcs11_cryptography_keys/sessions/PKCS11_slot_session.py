@@ -52,6 +52,10 @@ class PKCS11SlotSession(PKCS11Session):
                 if self._login_required:
                     self._session.login(self._pin)
                 return PKCS11Slot(self._session)
+            else:
+                self._logger.info("PKCS11 sessin could not be opened")
+        else:
+            self._logger.info("Slot could not be found")
 
         return None
 

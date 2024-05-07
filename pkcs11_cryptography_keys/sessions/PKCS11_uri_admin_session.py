@@ -65,6 +65,10 @@ class PKCS11URIAdminSession(PKCS11Session):
                 keyid = bytes(attrs[0])
                 label = attrs[1]
                 return keyid, label
+            else:
+                self._logger.info("Private key could not be found")
+        else:
+            self._logger.info("PKCS11 session is not present")
         return None, None
 
     # Open session with the card
@@ -88,6 +92,8 @@ class PKCS11URIAdminSession(PKCS11Session):
                 return PKCS11TokenAdmin(
                     self._session, keyid, label, self._logger
                 )
+        else:
+            self._logger.info("PKCS11 session is not present")
         return None
 
     # context manager API

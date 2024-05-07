@@ -82,6 +82,10 @@ class PKCS11URIKeySession(PKCS11Session):
             module_name = _key_modules.get(key_type, None)
             if module_name is not None:
                 module = import_module(module_name)
+            else:
+                self._logger.info(
+                    "Module for key type {0} is not setup".format(key_type)
+                )
             if module is not None:
                 private_key = module.get_key(
                     self._session,
@@ -90,6 +94,8 @@ class PKCS11URIKeySession(PKCS11Session):
                 )
                 for m, op in pkcs11_uri.gen_operations():
                     private_key.fill_operations(m, op)
+        else:
+            self._logger.info("PKCS11 session is not present")
         return private_key
 
     # context manager API

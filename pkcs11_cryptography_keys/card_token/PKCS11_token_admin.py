@@ -83,9 +83,11 @@ class PKCS11TokenAdmin:
                     self._session.createObject(
                         definition.get_template(KeyObjectTypes.private)
                     )
+                    self._logger.info("Private key created")
                     self._session.createObject(
                         definition.get_template(KeyObjectTypes.public)
                     )
+                    self._logger.info("Public key created")
                     private_objects = self._session.findObjects(
                         [
                             (PyKCS11.CKA_CLASS, PyKCS11.CKO_PRIVATE_KEY),
@@ -100,14 +102,18 @@ class PKCS11TokenAdmin:
                         definition.get_template(KeyObjectTypes.private),
                         mecha=definition.get_generation_mechanism(),
                     )
-                key_module = definition.get_module_name()
-                module = import_module(key_module)
-                if module != None:
-                    ret = module.get_key(self._session, self._keyid, priv_key)
-                else:
-                    raise Exception(
-                        "Could not find module for {0}".format(key_module)
-                    )
+                if priv_key is not None:
+                    self._logger.info("Keypair generated")
+                    key_module = definition.get_module_name()
+                    module = import_module(key_module)
+                    if module != None:
+                        ret = module.get_key(
+                            self._session, self._keyid, priv_key
+                        )
+                    else:
+                        raise Exception(
+                            "Could not find module for {0}".format(key_module)
+                        )
             else:
                 self._logger.info("Keypair definition missing")
         else:
