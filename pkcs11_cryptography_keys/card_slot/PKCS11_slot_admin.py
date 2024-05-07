@@ -4,7 +4,8 @@ class PKCS11SlotAdmin:
         # session for interacton with the card
         self._session = session
 
-    # Init pin for a card
+    # Init pin for a card (user pin)
+    # SO pin is initialized with token creation
     def init_pin(self, pin: str) -> None:
         if self._session != None:
             self._session.initPin(pin)
