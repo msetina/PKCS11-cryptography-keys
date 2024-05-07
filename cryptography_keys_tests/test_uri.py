@@ -20,6 +20,5 @@ class TestURI:
             assert PK is not None
             id, label = PK.get_id_and_label()
             assert id == b"\x01"
-            print(id, b"\x01", label)
             assert label == "Test key"
             admin.delete_key_pair()
