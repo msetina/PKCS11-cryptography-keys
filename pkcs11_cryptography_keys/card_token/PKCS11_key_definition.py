@@ -1,7 +1,6 @@
 from enum import Enum
 
 import PyKCS11
-
 from cryptography.x509 import KeyUsage
 
 
