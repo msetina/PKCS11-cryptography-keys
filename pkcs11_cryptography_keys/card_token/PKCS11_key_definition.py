@@ -2,6 +2,8 @@ from enum import Enum
 
 import PyKCS11
 
+from cryptography.x509 import KeyUsage
+
 
 class KeyTypes(Enum):
     EC = 1
@@ -100,6 +102,33 @@ class PKCS11KeyUsage(object):
         self._usage[OperationTypes.WRAP] = wrap
         self._usage[OperationTypes.DERIVE] = derive
         self._usage[OperationTypes.RECOVER] = recover
+
+    @classmethod
+    def from_X509_KeyUsage(cls, key_usage: KeyUsage):
+        crypt: bool = False
+        sign: bool = False
+        wrap: bool = False
+        recover: bool = False
+        derive: bool = False
+        if key_usage.digital_signature:
+            sign = True
+        if key_usage.content_commitment:
+            sign = True
+        if key_usage.crl_sign:
+            sign = True
+        if key_usage.key_cert_sign:
+            sign = True
+        if key_usage.data_encipherment:
+            crypt = True
+        if key_usage.key_agreement:
+            derive = True
+        if key_usage.key_encipherment:
+            wrap = True
+        if key_usage.digital_signature:
+            recover = True
+        if key_usage.content_commitment:
+            recover = True
+        return cls(crypt, sign, wrap, recover, derive)
 
     def get(self, key: OperationTypes) -> bool | None:
         return self._usage.get(key, False)
