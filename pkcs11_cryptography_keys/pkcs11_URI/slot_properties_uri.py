@@ -5,6 +5,7 @@ from pkcs11_cryptography_keys.utils.slot_properties import SlotProperties
 from .definitions import CK_SLOT_INFO_translation, ParameterMatch
 
 
+# slot properties
 class SlotPropertiesURI(SlotProperties):
     def __init__(self, properties: dict, set_flags: list[str]) -> None:
         super().__init__(properties, set_flags)
