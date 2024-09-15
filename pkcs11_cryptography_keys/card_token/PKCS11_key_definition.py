@@ -8,11 +8,17 @@ class KeyTypes(Enum):
     EC = 1
     RSA = 2
 
+    def __str__(self):
+        return super().__str__().replace("KeyTypes.", "")
+
 
 class KeyObjectTypes(Enum):
     private = 1
     public = 2
     certificate = 3
+
+    def __str__(self):
+        return super().__str__().replace("KeyObjectTypes.", "")
 
 
 class OperationTypes(Enum):
@@ -21,6 +27,9 @@ class OperationTypes(Enum):
     WRAP = 3
     DERIVE = 4
     RECOVER = 5
+
+    def __str__(self):
+        return super().__str__().replace("OperationTypes.", "")
 
 
 x509Operations = {
@@ -89,18 +98,18 @@ def to_biginteger_bytes(value: int) -> bytes:
 class PKCS11KeyUsage(object):
     def __init__(
         self,
-        crypt: bool,
-        sign: bool,
-        wrap: bool,
-        recover: bool,
-        derive: bool | None = None,
+        CRYPT: bool,
+        SIGN: bool,
+        WRAP: bool,
+        RECOVER: bool,
+        DERIVE: bool | None = None,
     ) -> None:
         self._usage: dict[OperationTypes, bool | None] = {}
-        self._usage[OperationTypes.CRYPT] = crypt
-        self._usage[OperationTypes.SIGN] = sign
-        self._usage[OperationTypes.WRAP] = wrap
-        self._usage[OperationTypes.DERIVE] = derive
-        self._usage[OperationTypes.RECOVER] = recover
+        self._usage[OperationTypes.CRYPT] = CRYPT
+        self._usage[OperationTypes.SIGN] = SIGN
+        self._usage[OperationTypes.WRAP] = WRAP
+        self._usage[OperationTypes.DERIVE] = DERIVE
+        self._usage[OperationTypes.RECOVER] = RECOVER
 
     @classmethod
     def from_X509_KeyUsage(cls, key_usage: KeyUsage):
@@ -168,6 +177,17 @@ class PKCS11KeyUsage(object):
                     ret = False
         return ret
 
+    def usage2text(self) -> list[str]:
+        list_true = []
+        for k, v in self._usage.items():
+            if v:
+                list_true.append(str(k))
+        return list_true
+
+    def __str__(self) -> str:
+        list_true = self.usage2text()
+        return ",".join(list_true)
+
 
 class PKCS11KeyUsageAll(PKCS11KeyUsage):
     def __init__(self) -> None:
@@ -211,11 +231,14 @@ def read_key_usage_from_key(session, key_ref) -> PKCS11KeyUsage | None:
         tag = _key_classes[class_attr[0]]
         atr_template = []
         usage_list = []
-        for k, v in _key_usage[tag].items():
-            atr_template.append(v)
-            usage_list.append(str(k).replace("OperationTypes.", "").lower())
-        attrs = session.getAttributeValue(key_ref, atr_template)
-        rezult = dict(zip(usage_list, attrs))
-        return PKCS11KeyUsage(**rezult)
+        if tag in _key_usage:
+            for k, v in _key_usage[tag].items():
+                atr_template.append(v)
+                usage_list.append(str(k))
+            attrs = session.getAttributeValue(key_ref, atr_template)
+            rezult = dict(zip(usage_list, attrs))
+            return PKCS11KeyUsage(**rezult)
+        else:
+            return None
     else:
         return None
