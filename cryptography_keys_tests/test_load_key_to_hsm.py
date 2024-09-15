@@ -18,7 +18,7 @@ class TestKeyLoading:
             public_exponent=65537,
             key_size=2048,
         )
-        for admin in list_token_admins(_pkcs11lib, "1234", True):
+        for admin in list_token_admins("1234", _pkcs11lib, True):
             with admin as current_admin:
                 keydef = PKCS11KeyUsageAllNoDerive()
                 rsa_priv_key = current_admin.create_key_pair(
@@ -47,7 +47,7 @@ class TestKeyLoading:
 
         private_key = generate_private_key(curve=SECP384R1())
 
-        for admin in list_token_admins(_pkcs11lib, "1234", True):
+        for admin in list_token_admins("1234", _pkcs11lib, True):
             with admin as current_admin:
                 keydef = PKCS11KeyUsageAll()
                 ec_priv_key = current_admin.create_key_pair(

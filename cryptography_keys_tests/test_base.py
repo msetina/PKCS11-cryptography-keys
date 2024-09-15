@@ -4,9 +4,9 @@ _pkcs11lib = "/usr/lib/softhsm/libsofthsm2.so"
 class TestBasic:
 
     def test_init_token(self):
-        from pkcs11_cryptography_keys import create_token
+        from pkcs11_cryptography_keys import create_token_on_all_slots
 
-        create_token(_pkcs11lib, "123456", "A token", "1234")
+        create_token_on_all_slots("123456", "A token", "1234", _pkcs11lib)
 
     def test_labels(self):
         from pkcs11_cryptography_keys import list_token_labels
@@ -23,16 +23,20 @@ class TestBasic:
         )
 
         for label in list_token_labels(_pkcs11lib):
-            sa_session = PKCS11SlotAdminSession(_pkcs11lib, label, "1234", True)
+            sa_session = PKCS11SlotAdminSession(label, "1234", True, _pkcs11lib)
             with sa_session as slot:
                 slot.change_pin("1234", "5432")
-            sa_session = PKCS11SlotAdminSession(_pkcs11lib, label, "5432", True)
+            sa_session = PKCS11SlotAdminSession(label, "5432", True, _pkcs11lib)
             with sa_session as slot:
                 slot.change_pin("5432", "1234")
-            sa_session = PKCS11SlotAdminSession(_pkcs11lib, label, "123456")
+            sa_session = PKCS11SlotAdminSession(
+                label, "123456", False, _pkcs11lib
+            )
             with sa_session as slot:
                 slot.change_pin("123456", "222222")
-            sa_session = PKCS11SlotAdminSession(_pkcs11lib, label, "222222")
+            sa_session = PKCS11SlotAdminSession(
+                label, "222222", False, _pkcs11lib
+            )
             with sa_session as slot:
                 slot.change_pin("222222", "123456")
         assert True
@@ -44,7 +48,7 @@ class TestBasic:
             list_token_admins,
         )
 
-        for admin in list_token_admins(_pkcs11lib, "1234", True):
+        for admin in list_token_admins("1234", _pkcs11lib, True):
             with admin as current_admin:
                 keydef = PKCS11KeyUsageAllNoDerive()
                 rsa_priv_key = current_admin.create_key_pair(
@@ -66,7 +70,7 @@ class TestBasic:
             list_token_admins,
         )
 
-        for admin in list_token_admins(_pkcs11lib, "1234", True):
+        for admin in list_token_admins("1234", _pkcs11lib, True):
             with admin as current_admin:
                 keydef = PKCS11KeyUsageAll()
                 ec_priv_key = current_admin.create_key_pair(
@@ -92,14 +96,16 @@ class TestBasic:
 
         data = b"How to encode this sentence"
         for label in list_token_labels(_pkcs11lib):
-            a_session = PKCS11AdminSession(_pkcs11lib, label, "1234", True)
+            a_session = PKCS11AdminSession(
+                label, "1234", True, pksc11_lib=_pkcs11lib
+            )
             with a_session as current_admin:
                 keydef = PKCS11KeyUsageAllNoDerive()
                 rsa_priv_key = current_admin.create_key_pair(
                     keydef, key_type=KeyTypes.RSA, RSA_length=2048
                 )
             assert rsa_priv_key is not None
-            k_session = PKCS11KeySession(_pkcs11lib, label, "1234")
+            k_session = PKCS11KeySession(label, "1234", pksc11_lib=_pkcs11lib)
             with k_session as current_key:
                 public = current_key.public_key()
                 padding1 = padding.PKCS1v15()
@@ -125,14 +131,14 @@ class TestBasic:
 
     #     message = b"encrypted data"
     #     for label in list_token_labels(_pkcs11lib):
-    #         a_session = PKCS11AdminSession(_pkcs11lib, label, "1234", True)
+    #         a_session = PKCS11AdminSession( label, "1234", True,pksc11_lib=_pkcs11lib)
     #         with a_session as current_admin:
     #           keydef = PKCS11KeyUsageAllNoDerive()
     # rsa_priv_key = current_admin.create_key_pair(
     #     keydef, key_type=KeyTypes.RSA, RSA_length=2048
     # )
     #         assert rsa_priv_key is not None
-    #         k_session = PKCS11KeySession(_pkcs11lib, label, "1234")
+    #         k_session = PKCS11KeySession( label, "1234",pksc11_lib=_pkcs11lib)
     #         with k_session as current_key:
     #             public_key = current_key.public_key()
     #             hash1 = hashes.SHA256()
@@ -167,14 +173,16 @@ class TestBasic:
 
         message = b"encrypted data"
         for label in list_token_labels(_pkcs11lib):
-            a_session = PKCS11AdminSession(_pkcs11lib, label, "1234", True)
+            a_session = PKCS11AdminSession(
+                label, "1234", True, pksc11_lib=_pkcs11lib
+            )
             with a_session as current_admin:
                 keydef = PKCS11KeyUsageAllNoDerive()
                 rsa_priv_key = current_admin.create_key_pair(
                     keydef, key_type=KeyTypes.RSA, RSA_length=2048
                 )
             assert rsa_priv_key is not None
-            k_session = PKCS11KeySession(_pkcs11lib, label, "1234")
+            k_session = PKCS11KeySession(label, "1234", pksc11_lib=_pkcs11lib)
             with k_session as current_key:
                 public_key = current_key.public_key()
                 # SoftHSM supports just SHA1 in this case
@@ -210,14 +218,16 @@ class TestBasic:
 
         data = b"How to encode this sentence"
         for label in list_token_labels(_pkcs11lib):
-            a_session = PKCS11AdminSession(_pkcs11lib, label, "1234", True)
+            a_session = PKCS11AdminSession(
+                label, "1234", True, pksc11_lib=_pkcs11lib
+            )
             with a_session as current_admin:
                 keydef = PKCS11KeyUsageAllNoDerive()
                 rsa_priv_key = current_admin.create_key_pair(
                     keydef, key_type=KeyTypes.RSA, RSA_length=2048
                 )
             assert rsa_priv_key is not None
-            k_session = PKCS11KeySession(_pkcs11lib, label, "1234")
+            k_session = PKCS11KeySession(label, "1234", pksc11_lib=_pkcs11lib)
             with k_session as current_key:
                 public = current_key.public_key()
                 hash1 = hashes.SHA256()
@@ -243,14 +253,16 @@ class TestBasic:
 
         message = b"A message I want to sign"
         for label in list_token_labels(_pkcs11lib):
-            a_session = PKCS11AdminSession(_pkcs11lib, label, "1234", True)
+            a_session = PKCS11AdminSession(
+                label, "1234", True, pksc11_lib=_pkcs11lib
+            )
             with a_session as current_admin:
                 keydef = PKCS11KeyUsageAllNoDerive()
                 rsa_priv_key = current_admin.create_key_pair(
                     keydef, key_type=KeyTypes.RSA, RSA_length=2048
                 )
             assert rsa_priv_key is not None
-            k_session = PKCS11KeySession(_pkcs11lib, label, "1234")
+            k_session = PKCS11KeySession(label, "1234", pksc11_lib=_pkcs11lib)
             with k_session as current_key:
                 hash1 = hashes.SHA256()
                 padding1 = padding.PSS(
@@ -289,14 +301,16 @@ class TestBasic:
 
         message = b"A message I want to sign"
         for label in list_token_labels(_pkcs11lib):
-            a_session = PKCS11AdminSession(_pkcs11lib, label, "1234", True)
+            a_session = PKCS11AdminSession(
+                label, "1234", True, pksc11_lib=_pkcs11lib
+            )
             with a_session as current_admin:
                 keydef = PKCS11KeyUsageAllNoDerive()
                 rsa_priv_key = current_admin.create_key_pair(
                     keydef, key_type=KeyTypes.RSA, RSA_length=2048
                 )
             assert rsa_priv_key is not None
-            k_session = PKCS11KeySession(_pkcs11lib, label, "1234")
+            k_session = PKCS11KeySession(label, "1234", pksc11_lib=_pkcs11lib)
             with k_session as current_key:
                 hash1 = hashes.SHA256()
                 padding1 = padding.PSS(
@@ -335,14 +349,16 @@ class TestBasic:
 
         message = b"A message I want to sign"
         for label in list_token_labels(_pkcs11lib):
-            a_session = PKCS11AdminSession(_pkcs11lib, label, "1234", True)
+            a_session = PKCS11AdminSession(
+                label, "1234", True, pksc11_lib=_pkcs11lib
+            )
             with a_session as current_admin:
                 keydef = PKCS11KeyUsageAllNoDerive()
                 rsa_priv_key = current_admin.create_key_pair(
                     keydef, key_type=KeyTypes.RSA, RSA_length=2048
                 )
             assert rsa_priv_key is not None
-            k_session = PKCS11KeySession(_pkcs11lib, label, "1234")
+            k_session = PKCS11KeySession(label, "1234", pksc11_lib=_pkcs11lib)
             with k_session as current_key:
                 hash1 = hashes.SHA256()
                 padding1 = padding.PSS(
@@ -383,14 +399,16 @@ class TestBasic:
 
         message = b"A message I want to sign"
         for label in list_token_labels(_pkcs11lib):
-            a_session = PKCS11AdminSession(_pkcs11lib, label, "1234", True)
+            a_session = PKCS11AdminSession(
+                label, "1234", True, pksc11_lib=_pkcs11lib
+            )
             with a_session as current_admin:
                 keydef = PKCS11KeyUsageAllNoDerive()
                 rsa_priv_key = current_admin.create_key_pair(
                     keydef, key_type=KeyTypes.RSA, RSA_length=2048
                 )
             assert rsa_priv_key is not None
-            k_session = PKCS11KeySession(_pkcs11lib, label, "1234")
+            k_session = PKCS11KeySession(label, "1234", pksc11_lib=_pkcs11lib)
             with k_session as current_key:
                 hash1 = hashes.SHA256()
                 padding1 = padding.PSS(
@@ -434,14 +452,16 @@ class TestBasic:
         hasher.update(data)
         digest = hasher.finalize()
         for label in list_token_labels(_pkcs11lib):
-            a_session = PKCS11AdminSession(_pkcs11lib, label, "1234", True)
+            a_session = PKCS11AdminSession(
+                label, "1234", True, pksc11_lib=_pkcs11lib
+            )
             with a_session as current_admin:
                 keydef = PKCS11KeyUsageAll()
                 ec_priv_key = current_admin.create_key_pair(
                     keydef, key_type=KeyTypes.EC, EC_curve=SECP384R1()
                 )
             assert ec_priv_key is not None
-            k_session = PKCS11KeySession(_pkcs11lib, label, "1234")
+            k_session = PKCS11KeySession(label, "1234", pksc11_lib=_pkcs11lib)
             with k_session as current_key:
                 public = current_key.public_key()
                 algo = ECDSA(utils.Prehashed(chosen_hash))

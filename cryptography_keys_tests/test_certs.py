@@ -74,7 +74,7 @@ class TestCertificates:
         )
         for label in list_token_labels(_pkcs11lib):
             create_session = PKCS11AdminSession(
-                _pkcs11lib, label, "1234", True, "sig_token", b"254"
+                label, "1234", True, "sig_token", b"254", _pkcs11lib
             )
             with create_session as current_admin:
                 keydef = PKCS11KeyUsageAllNoDerive()
@@ -84,7 +84,7 @@ class TestCertificates:
                 assert rsa_priv_key is not None
 
             key_session = PKCS11KeySession(
-                _pkcs11lib, label, "1234", "sig_token"
+                label, "1234", "sig_token", _pkcs11lib
             )
             with key_session as PK:
                 if PK:
@@ -108,17 +108,22 @@ class TestCertificates:
                         algorithm=hashes.SHA256(),
                     )
 
-            admin_session = PKCS11AdminSession(_pkcs11lib, label, "1234", True)
+            admin_session = PKCS11AdminSession(
+                label, "1234", True, pksc11_lib=_pkcs11lib
+            )
             with admin_session as token_admin:
                 token_admin.write_certificate(certificate)
 
-            slot_session = PKCS11SlotSession(_pkcs11lib, label, "1234")
+            slot_session = PKCS11SlotSession(
+                label, "1234", pksc11_lib=_pkcs11lib
+            )
             cnt = 0
             val = None
             with slot_session as slot:
-                for c in slot.list_cert_data():
-                    val = c["sig_token"]["personal"]["commonName"][1]
-                    cnt = cnt + 1
+                for nm, c in slot.list_cert_data():
+                    if nm == "sig_token":
+                        val = c["certificate"]["personal"]["commonName"][1]
+                        cnt = cnt + 1
             assert cnt == 1
             assert val == "Signature User"
 

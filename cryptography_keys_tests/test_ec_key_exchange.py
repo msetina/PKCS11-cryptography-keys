@@ -20,7 +20,7 @@ class TestECKeyExchange:
             pub_key_obj_1 = None
             pub_key_obj_2 = None
             create_session_1 = PKCS11AdminSession(
-                _pkcs11lib, label, "1234", True, "ec_token_1", b"254"
+                label, "1234", True, "ec_token_1", b"254", _pkcs11lib
             )
             with create_session_1 as current_admin:
                 keydef = PKCS11KeyUsageAll()
@@ -32,7 +32,7 @@ class TestECKeyExchange:
                 pub_key_obj_1 = pub_key_1.public_numbers().public_key()
 
             create_session_2 = PKCS11AdminSession(
-                _pkcs11lib, label, "1234", True, "ec_token_2", b"255"
+                label, "1234", True, "ec_token_2", b"255", _pkcs11lib
             )
             with create_session_2 as current_admin:
                 keydef = PKCS11KeyUsageAll()
@@ -47,10 +47,10 @@ class TestECKeyExchange:
                 ex_key_1 = None
                 ex_key_2 = None
                 private_1_ses = PKCS11KeySession(
-                    _pkcs11lib, label, "1234", "ec_token_1"
+                    label, "1234", "ec_token_1", _pkcs11lib
                 )
                 private_2_ses = PKCS11KeySession(
-                    _pkcs11lib, label, "1234", "ec_token_2"
+                    label, "1234", "ec_token_2", _pkcs11lib
                 )
                 # pkcs11-tool --modul /usr/lib/softhsm/libsofthsm2.so --login -p "123456" --login-type user --id 1 --derive -i alice-public.der -m ECDH1-DERIVE -o bob_shared_secret.raw
                 with private_1_ses as curr_key:
@@ -92,7 +92,7 @@ class TestECKeyExchange:
         for label in list_token_labels(_pkcs11lib):
             pub_key_obj_1 = None
             create_session_1 = PKCS11AdminSession(
-                _pkcs11lib, label, "1234", True, "ec_token_1", b"254"
+                label, "1234", True, "ec_token_1", b"254", _pkcs11lib
             )
             with create_session_1 as current_admin:
                 keydef = PKCS11KeyUsageAll()
@@ -109,7 +109,7 @@ class TestECKeyExchange:
                 derived_key = None
                 same_derived_key = None
                 private_1_ses = PKCS11KeySession(
-                    _pkcs11lib, label, "1234", "ec_token_1"
+                    label, "1234", "ec_token_1", _pkcs11lib
                 )
                 with private_1_ses as curr_key:
                     ex_key_1 = curr_key.exchange(
