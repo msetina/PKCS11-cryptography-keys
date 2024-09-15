@@ -1,6 +1,8 @@
 from enum import Enum
 from typing import Callable
 
+from pkcs11_cryptography_keys.utils.exceptions import CallbackException
+
 
 class PinTypes(Enum):
     SO_USER = 1
@@ -47,5 +49,5 @@ class Pin4Token(object):
         if call is not None:
             ret = call(self._name, self._reason)
         else:
-            raise Exception("Pin callback not set!")
+            raise CallbackException("Pin callback not set!")
         return ret
