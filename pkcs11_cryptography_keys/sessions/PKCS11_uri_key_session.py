@@ -1,20 +1,7 @@
 from importlib import import_module
 from logging import Logger
 
-from PyKCS11 import (
-    CKA_CLASS,
-    CKA_ID,
-    CKA_KEY_TYPE,
-    CKA_LABEL,
-    CKF_LOGIN_REQUIRED,
-    CKF_RW_SESSION,
-    CKF_SERIAL_SESSION,
-    CKK_ECDSA,
-    CKK_RSA,
-    CKO_PRIVATE_KEY,
-    PyKCS11Lib,
-    Session,
-)
+from PyKCS11 import CKK_ECDSA, CKK_RSA
 
 from pkcs11_cryptography_keys.keys.ec import EllipticCurvePrivateKeyPKCS11
 from pkcs11_cryptography_keys.keys.rsa import RSAPrivateKeyPKCS11
@@ -73,7 +60,7 @@ class PKCS11URIKeySession(PKCS11Session):
         private_key = None
         pkcs11_uri = PKCS11URI.parse(self._uri, self._logger)
         self._login_required = False
-        self._session = pkcs11_uri.get_session(pin_getter=self._pin_getter)
+        self._session, tp = pkcs11_uri.get_session(pin_getter=self._pin_getter)
         if self._session is not None:
             keyid, label, key_type, pk_ref = pkcs11_uri.get_private_key(
                 self._session

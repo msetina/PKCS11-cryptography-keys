@@ -1,17 +1,6 @@
 from logging import Logger
 
-from PyKCS11 import (
-    CKA_CLASS,
-    CKA_ID,
-    CKA_LABEL,
-    CKF_LOGIN_REQUIRED,
-    CKF_RW_SESSION,
-    CKF_SERIAL_SESSION,
-    CKO_PRIVATE_KEY,
-    CKU_SO,
-    PyKCS11Lib,
-    Session,
-)
+from PyKCS11 import CKA_CLASS, CKA_ID, CKA_LABEL, CKO_PRIVATE_KEY
 
 from pkcs11_cryptography_keys.card_token.PKCS11_token_admin import (
     PKCS11TokenAdmin,
@@ -76,7 +65,7 @@ class PKCS11URIAdminSession(PKCS11Session):
     def open(self) -> PKCS11TokenAdmin | None:
         pkcs11_uri = PKCS11URI.parse(self._uri, self._logger)
         self._login_required = False
-        self._session = pkcs11_uri.get_session(
+        self._session, tp = pkcs11_uri.get_session(
             self._norm_user, self._pin_getter
         )
         if self._session is not None:

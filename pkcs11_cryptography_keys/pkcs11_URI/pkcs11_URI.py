@@ -10,24 +10,28 @@ from PyKCS11 import (
     CKA_ID,
     CKA_KEY_TYPE,
     CKA_LABEL,
-    CKF_LOGIN_REQUIRED,
     CKF_RW_SESSION,
     CKF_SERIAL_SESSION,
-    CKF_TOKEN_INITIALIZED,
     CKU_SO,
     PyKCS11Lib,
     Session,
 )
 
+from pkcs11_cryptography_keys.utils.exceptions import (
+    SessionException,
+    UriException,
+)
 from pkcs11_cryptography_keys.utils.pin_4_token import Pin4Token, PinTypes
 
 from .definitions import (
     CK_INFO_translation,
     CK_SESSION_INFO_translation,
-    CK_SLOT_INFO_translation,
-    CK_TOKEN_INFO_translation,
+    ParameterMatch,
     PKCS11_type_translation,
 )
+from .library_properties_uri import LibraryPropertiesURI
+from .slot_properties_uri import SlotPropertiesURI
+from .token_properties_uri import TokenPropertiesURI
 
 
 class PKCS11URI(object):
@@ -106,7 +110,7 @@ class PKCS11URI(object):
                             a = rest.find(";")
                             b = rest.find("=")
                             if a > 0 and a < b:
-                                raise Exception(
+                                raise UriException(
                                     "Bad location: {0}".format(rest)
                                 )
                             elif a < 0:
@@ -124,7 +128,9 @@ class PKCS11URI(object):
                             a = rest.find(";")
                             b = rest.find("=")
                             if a > 0 and a < b:
-                                raise Exception("Bad query: {0}".format(rest))
+                                raise UriException(
+                                    "Bad query: {0}".format(rest)
+                                )
                             elif a < 0:
                                 query[rest[0:b]] = unquote(rest[b + 1 :])
                                 break
@@ -133,12 +139,12 @@ class PKCS11URI(object):
                                 rest = rest[a + 1 :]
 
                     else:
-                        raise Exception("Bad query in URI")
+                        raise UriException("Bad query in URI")
                 return cls(location, query, local_logger)
             else:
-                raise Exception("URI was not parsed properly")
+                raise UriException("URI was not parsed properly")
         else:
-            raise Exception("Provided string is not an URI")
+            raise UriException("Provided string is not an URI")
 
     def get_session(
         self, norm_user: bool = True, pin_getter: Pin4Token | None = None
@@ -149,62 +155,49 @@ class PKCS11URI(object):
             library.load(self._query["module-path"])
         else:
             library.load()
-        info = library.getInfo()
+        lp = LibraryPropertiesURI.read_from_slot(library)
         for tag in self._location:
-            if tag in CK_INFO_translation:
-                ck_tag = CK_INFO_translation[tag]
-                if self._location[tag] != info.__dict__[ck_tag].strip():
-                    raise Exception(
-                        "PKCS11 library does not corespond to URI parameters. {0} -> {1} != {2}".format(
-                            tag, self._location[tag], info.fields[ck_tag]
-                        )
-                    )
+            lib_check = lp.check_uri_parameter(
+                tag, self._location[tag], self._logger
+            )
         slots = library.getSlotList(tokenPresent=True)
         slot = None
-        login_required = False
+        tp = None
         for sl in slots:
-            ti = library.getTokenInfo(sl)
-            si = library.getSlotInfo(sl)
-            if ti.flags & CKF_LOGIN_REQUIRED != 0:
+            login_required = False
+            tp = TokenPropertiesURI.read_from_slot(library, sl)
+            sp = SlotPropertiesURI.read_from_slot(library, sl)
+            if tp.is_login_required():
                 login_required = True
-            if not ti.flags & CKF_TOKEN_INITIALIZED != 0:
-                del ti
-                del si
+            if not tp.is_initialized():
                 continue
             found = False
             for tag in self._location:
-                if tag in CK_SLOT_INFO_translation:
-                    ck_tag = CK_SLOT_INFO_translation[tag]
-                    found = True
-                    if self._location[tag] != si.__dict__[ck_tag].strip().strip(
-                        "\x00"
-                    ):
-                        self._logger.info(
-                            "On slot '{0}' did not match '{1}'".format(
-                                self._location[tag], si.__dict__[ck_tag].strip()
-                            )
-                        )
+                s_check = sp.check_uri_parameter(
+                    tag, self._location[tag], self._logger
+                )
+                if (
+                    s_check == ParameterMatch.Found
+                    or s_check == ParameterMatch.FoundButWrongValue
+                ):
+                    if s_check == ParameterMatch.FoundButWrongValue:
                         slot = None
                         break
                     else:
                         slot = sl
-                if tag in CK_TOKEN_INFO_translation:
-                    ck_tag = CK_TOKEN_INFO_translation[tag]
-                    found = True
-                    if self._location[tag] != ti.__dict__[ck_tag].strip().strip(
-                        "\x00"
+                else:
+                    t_check = tp.check_uri_parameter(
+                        tag, self._location[tag], self._logger
+                    )
+                    if (
+                        t_check == ParameterMatch.Found
+                        or t_check == ParameterMatch.FoundButWrongValue
                     ):
-                        self._logger.info(
-                            "On token '{0}' did not match '{1}'".format(
-                                self._location[tag], ti.__dict__[ck_tag].strip()
-                            )
-                        )
-                        slot = None
-                        break
-                    else:
-                        slot = sl
-            del ti
-            del si
+                        if t_check == ParameterMatch.FoundButWrongValue:
+                            slot = None
+                            break
+                        else:
+                            slot = sl
             if found:
                 if slot is None:
                     found = False
@@ -222,7 +215,7 @@ class PKCS11URI(object):
                     if self._location[tag] != ses_info.__dict__[ck_tag]:
                         session.closeSession()
                         session = None
-                        raise Exception(
+                        raise UriException(
                             "{0} is of value {1}".format(
                                 tag, ses_info.__dict__[ck_tag]
                             )
@@ -254,7 +247,7 @@ class PKCS11URI(object):
                         else:
                             session.login(pin, CKU_SO)
                     else:
-                        raise Exception(
+                        raise SessionException(
                             "Login is required, but pin was not provided"
                         )
                     mechanisms = library.getMechanismList(slot)
@@ -269,7 +262,7 @@ class PKCS11URI(object):
                 self._logger.info("Session could not be opened.")
         else:
             self._logger.info("Required slot was not found.")
-        return session
+        return session, tp
 
     def gen_operations(self):
         for m, op in self._operations:
