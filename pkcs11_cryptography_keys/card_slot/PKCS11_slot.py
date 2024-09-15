@@ -1,13 +1,17 @@
+from logging import getLogger
+
 import PyKCS11
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives.hashes import SHA1, SHA256
 
 
 # Token representation
 class PKCS11Slot:
-    def __init__(self, session):
+    def __init__(self, session, logger=None):
         # session for interacton with the card
         self._session = session
+        self._logger = logger if logger is not None else getLogger("PKCS11Slot")
 
     # list certificate information in a form of dict.
     def list_cert_data(self):
@@ -21,7 +25,8 @@ class PKCS11Slot:
             for pk11object in pk11objects:
                 try:
                     attributes = self._session.getAttributeValue(
-                        pk11object, [PyKCS11.CKA_VALUE, PyKCS11.CKA_LABEL]
+                        pk11object,
+                        [PyKCS11.CKA_VALUE, PyKCS11.CKA_LABEL, PyKCS11.CKA_ID],
                     )
                 except PyKCS11.PyKCS11Error as e:
                     continue
@@ -31,6 +36,18 @@ class PKCS11Slot:
                     cert, backend=default_backend()
                 )
                 data = {}
+                data["ID"] = bytes(attributes[2])
+                data["version"] = cert.version
+                data["serial_number"] = cert.serial_number
+                data["singature_algorithm"] = cert.signature_algorithm_oid
+                data["not_valid_before"] = cert.not_valid_before_utc
+                data["not_valid_after"] = cert.not_valid_after_utc
+                data["fingerprint"] = {}
+                data["fingerprint"]["SHA1"] = cert.fingerprint(SHA1())
+                data["fingerprint"]["SHA256"] = cert.fingerprint(SHA256())
+                pubkey = cert.public_key()
+                data["public_key"] = pubkey
+                data["subject"] = cert.subject
                 data["issuer"] = {}
                 for issuer_data in cert.issuer:
                     if issuer_data.oid._name == "Unknown OID":
@@ -66,7 +83,7 @@ class PKCS11Slot:
                             exten.oid,
                             exten.value,
                         )
-                yield ({attributes[1]: data})
+                yield attributes[1], {"certificate": data}
 
     # list private keys
     def list_private_keys(self):
@@ -84,7 +101,9 @@ class PKCS11Slot:
                 except PyKCS11.PyKCS11Error as e:
                     continue
 
-                yield ({attributes[1]: bytes(attributes[0])})
+                yield attributes[1], {
+                    "private key": {"ID": bytes(attributes[0])}
+                }
 
     # list public keys
     def list_public_keys(self):
@@ -102,7 +121,9 @@ class PKCS11Slot:
                 except PyKCS11.PyKCS11Error as e:
                     continue
 
-                yield ({attributes[1]: bytes(attributes[0])})
+                yield attributes[1], {
+                    "public key": {"ID": bytes(attributes[0])}
+                }
 
     # list certificates
     def list_certificates(self):
@@ -120,4 +141,6 @@ class PKCS11Slot:
                 except PyKCS11.PyKCS11Error as e:
                     continue
 
-                yield ({attributes[1]: bytes(attributes[0])})
+                yield attributes[1], {
+                    "certificate": {"ID": bytes(attributes[0])}
+                }
