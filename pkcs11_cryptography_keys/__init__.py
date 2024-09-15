@@ -25,6 +25,12 @@ from pkcs11_cryptography_keys.keys import (
 from pkcs11_cryptography_keys.keys import (
     PKCS11PublicKeyTypes as PKCS11PublicKeyTypes,
 )
+from pkcs11_cryptography_keys.pkcs11_URI.pkcs11_scanner_uri import (
+    PKCS11ScannerURI as PKCS11ScannerURI,
+)
+from pkcs11_cryptography_keys.pkcs11_URI.utils import (
+    get_URIs_from_library as get_URIs_from_library,
+)
 from pkcs11_cryptography_keys.sessions.PKCS11_admin_session import (
     PKCS11AdminSession as PKCS11AdminSession,
 )
@@ -43,9 +49,16 @@ from pkcs11_cryptography_keys.sessions.PKCS11_uri_admin_session import (
 from pkcs11_cryptography_keys.sessions.PKCS11_uri_key_session import (
     PKCS11URIKeySession as PKCS11URIKeySession,
 )
+from pkcs11_cryptography_keys.sessions.PKCS11_uri_slot_admin_session import (
+    PKCS11URISlotAdminSession as PKCS11URISlotAdminSession,
+)
 from pkcs11_cryptography_keys.utils.init_token import (
     create_token as create_token,
 )
+from pkcs11_cryptography_keys.utils.init_token import (
+    create_token_on_all_slots as create_token_on_all_slots,
+)
+from pkcs11_cryptography_keys.utils.listers import list_slots as list_slots
 from pkcs11_cryptography_keys.utils.listers import (
     list_token_admins as list_token_admins,
 )
@@ -54,3 +67,7 @@ from pkcs11_cryptography_keys.utils.listers import (
 )
 from pkcs11_cryptography_keys.utils.pin_4_token import Pin4Token as Pin4Token
 from pkcs11_cryptography_keys.utils.pin_4_token import PinTypes as PinTypes
+from pkcs11_cryptography_keys.utils.pkcs11_scanner import (
+    PKCS11Scanner as PKCS11Scanner,
+)
+from pkcs11_cryptography_keys.utils.token_properties import PinState as PinState
