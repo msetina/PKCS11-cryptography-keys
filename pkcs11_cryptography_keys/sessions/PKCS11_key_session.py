@@ -6,18 +6,17 @@ from PyKCS11 import (
     CKA_ID,
     CKA_KEY_TYPE,
     CKA_LABEL,
-    CKF_LOGIN_REQUIRED,
     CKF_RW_SESSION,
     CKF_SERIAL_SESSION,
     CKK_ECDSA,
     CKK_RSA,
     CKO_PRIVATE_KEY,
     PyKCS11Lib,
-    Session,
 )
 
 from pkcs11_cryptography_keys.keys.ec import EllipticCurvePrivateKeyPKCS11
 from pkcs11_cryptography_keys.keys.rsa import RSAPrivateKeyPKCS11
+from pkcs11_cryptography_keys.utils.token_properties import TokenProperties
 
 from .PKCS11_session import PKCS11Session
 
@@ -31,10 +30,10 @@ _key_modules = {
 class PKCS11KeySession(PKCS11Session):
     def __init__(
         self,
-        pksc11_lib: str,
         token_label: str,
         pin: str,
         key_label: str | None = None,
+        pksc11_lib: str | None = None,
         logger: Logger | None = None,
     ):
         super().__init__(logger)
@@ -76,20 +75,26 @@ class PKCS11KeySession(PKCS11Session):
     ) -> EllipticCurvePrivateKeyPKCS11 | RSAPrivateKeyPKCS11 | None:
         private_key = None
         library = PyKCS11Lib()
-        library.load(self._pksc11_lib)
+        if self._pksc11_lib is not None:
+            library.load(self._pksc11_lib)
+        else:
+            library.load()
         slots = library.getSlotList(tokenPresent=True)
         slot = None
         self._login_required = False
+        tp = None
         for sl in slots:
-            ti = library.getTokenInfo(sl)
-            if ti.flags & CKF_LOGIN_REQUIRED != 0:
-                self._login_required = True
+            tp = TokenProperties.read_from_slot(library, sl)
             if self._token_label is None:
                 slot = sl
-            if ti.label.strip() == self._token_label:
+                break
+            lbl = tp.get_label()
+            if lbl == self._token_label:
                 slot = sl
                 break
-        if slot is not None:
+        if slot is not None and tp is not None:
+            if tp.is_login_required():
+                self._login_required = True
             self._session = library.openSession(
                 slot, CKF_SERIAL_SESSION | CKF_RW_SESSION
             )
