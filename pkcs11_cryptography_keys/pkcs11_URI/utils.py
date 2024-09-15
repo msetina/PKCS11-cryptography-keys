@@ -1,21 +1,15 @@
 from enum import Flag
 from urllib.parse import quote, quote_from_bytes
 
-from PyKCS11 import (
-    CKA_CLASS,
-    CKA_ID,
-    CKA_LABEL,
-    CKF_LOGIN_REQUIRED,
-    CKF_SERIAL_SESSION,
-    PyKCS11Lib,
+from PyKCS11 import CKA_CLASS, CKA_ID, CKA_LABEL, CKF_SERIAL_SESSION, PyKCS11Lib
+
+from pkcs11_cryptography_keys.pkcs11_URI.library_properties_uri import (
+    LibraryPropertiesURI,
 )
 
-from .definitions import (
-    CK_INFO_translation,
-    CK_SLOT_INFO_translation,
-    CK_TOKEN_INFO_translation,
-    PKCS11_type_translation,
-)
+from .definitions import PKCS11_type_translation
+from .slot_properties_uri import SlotPropertiesURI
+from .token_properties_uri import TokenPropertiesURI
 
 
 class URILocationLevel(Flag):
@@ -73,8 +67,8 @@ def __read_keys(
     return ret
 
 
-def get_URIs_from_module(
-    module: str | None,
+def get_URIs_from_library(
+    lib: str | None,
     location_level: URILocationLevel,
     pin: str | None = None,
 ) -> list[str]:
@@ -82,39 +76,34 @@ def get_URIs_from_module(
     lib_location = []
     query = []
     login_required = False
-    if module is not None:
-        query.append("module-path={0}".format(module))
+    if lib is not None:
+        query.append("module-path={0}".format(lib))
     if pin is not None:
         query.append("pin-value={0}".format(pin))
     library = PyKCS11Lib()
-    if module is not None:
-        library.load(module)
+    if lib is not None:
+        library.load(lib)
     else:
         library.load()
-    info = library.getInfo()
+    lp = LibraryPropertiesURI.read_from_slot(library)
     if location_level & URILocationLevel.LIBRARY is not URILocationLevel.NO:
-        for tag in CK_INFO_translation:
-            ck_tag = CK_INFO_translation[tag]
+        for tag, val in lp.gen_uri_tags():
             if tag not in ["library-version"]:
-                val = quote(info.__dict__[ck_tag].strip())
                 lib_location.append("{0}={1}".format(tag, val))
     slots = library.getSlotList(tokenPresent=True)
     for sl in slots:
         location = []
         location.extend(lib_location)
-        ti = library.getTokenInfo(sl)
-        if ti.flags & CKF_LOGIN_REQUIRED != 0:
+        tp = TokenPropertiesURI.read_from_slot(library, sl)
+        if tp.is_login_required():
             login_required = True
         if location_level & URILocationLevel.SLOT is not URILocationLevel.NO:
-            si = library.getSlotInfo(sl)
-            for tag in CK_SLOT_INFO_translation:
-                ck_tag = CK_SLOT_INFO_translation[tag]
-                val = quote(si.__dict__[ck_tag].strip())
+            sp = SlotPropertiesURI.read_from_slot(library, sl)
+            for tag, val in sp.gen_uri_tags():
                 location.append("{0}={1}".format(tag, val))
+
         if location_level & URILocationLevel.TOKEN is not URILocationLevel.NO:
-            for tag in CK_TOKEN_INFO_translation:
-                ck_tag = CK_TOKEN_INFO_translation[tag]
-                val = quote(ti.__dict__[ck_tag].strip())
+            for tag, val in tp.gen_uri_tags():
                 location.append("{0}={1}".format(tag, val))
         if (
             location_level & URILocationLevel.PRIVATE_KEY
@@ -154,14 +143,14 @@ def get_URIs_from_module(
 
 def get_pkcs11_uri(
     token_label: str,
-    module: str | None = None,
+    lib: str | None = None,
     key_id: bytes | None = None,
     key_label: str | None = None,
     pin: str | None = None,
 ) -> str:
     query = []
-    if module is not None:
-        query.append("module-path={0}".format(module))
+    if lib is not None:
+        query.append("module-path={0}".format(lib))
     if pin is not None:
         query.append("pin-value={0}".format(pin))
     location = []
