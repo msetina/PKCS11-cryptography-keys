@@ -1,3 +1,5 @@
+from enum import Enum
+
 from PyKCS11 import (
     CKO_CERTIFICATE,
     CKO_DATA,
@@ -5,6 +7,13 @@ from PyKCS11 import (
     CKO_PUBLIC_KEY,
     CKO_SECRET_KEY,
 )
+
+
+class ParameterMatch(Enum):
+    NotFound = 0
+    FoundButWrongValue = -1
+    Found = 1
+
 
 PKCS11_type_translation: dict[str, int] = {
     "cert": CKO_CERTIFICATE,
