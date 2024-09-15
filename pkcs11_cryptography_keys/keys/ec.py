@@ -33,6 +33,10 @@ from cryptography.hazmat.primitives.serialization import (
 from cryptography.x509 import ObjectIdentifier as cryptoObjectIdentifier
 
 from pkcs11_cryptography_keys.card_token.PKCS11_token import PKCS11Token
+from pkcs11_cryptography_keys.utils.exceptions import (
+    KeyException,
+    SessionException,
+)
 
 # Translation from mechanism read from the card to parameters needed for cryptography API
 # At init time this is used to for operations list for later use in function calls as card limitations
@@ -152,7 +156,7 @@ class EllipticCurvePublicKeyPKCS11:
                     ansiXY = BitString.load(bytes(ec_attrs[0]))
                     # this will be in next versions. Question how to get proper 04|X|Y from it.
                 else:
-                    raise PyKCS11.PyKCS11Error(
+                    raise KeyException(
                         "EC point envelope is not recognized: {0}".format(
                             ec_attrs[0]
                         )
@@ -169,16 +173,16 @@ class EllipticCurvePublicKeyPKCS11:
                         )
                         return public_key_buffer
                     else:
-                        raise PyKCS11.PyKCS11Error(
+                        raise KeyException(
                             "EC point not properly formated (04|X|Y)"
                         )
 
                 else:
-                    raise Exception("Could not get curve class")
+                    raise KeyException("Could not get curve class")
             else:
-                raise PyKCS11.PyKCS11Error("EC point was not returned")
+                raise KeyException("EC point was not returned")
         else:
-            raise PyKCS11.PyKCS11Error("Session to card missing")
+            raise SessionException("Session to card missing")
 
     # cryptography API
     @property
@@ -187,7 +191,7 @@ class EllipticCurvePublicKeyPKCS11:
         if key != None:
             return key.curve
         else:
-            raise Exception("Key not found")
+            raise KeyException("Key not found")
 
     @property
     def key_size(self) -> int:
@@ -195,14 +199,14 @@ class EllipticCurvePublicKeyPKCS11:
         if key != None:
             return key.key_size
         else:
-            raise Exception("Key not found")
+            raise KeyException("Key not found")
 
     def public_numbers(self) -> EllipticCurvePublicNumbers:
         key = self._read_public_key_data()
         if key != None:
             return key.public_numbers()
         else:
-            raise Exception("Key not found")
+            raise KeyException("Key not found")
 
     def public_bytes(
         self,
@@ -213,7 +217,7 @@ class EllipticCurvePublicKeyPKCS11:
         if key != None:
             return key.public_bytes(encoding, format)
         else:
-            raise Exception("Key not found")
+            raise KeyException("Key not found")
 
     def verify(
         self,
@@ -242,7 +246,7 @@ class EllipticCurvePublicKeyPKCS11:
             else:
                 raise UnsupportedAlgorithm("Verify not supported by the card")
         else:
-            raise PyKCS11.PyKCS11Error("Session to card missing")
+            raise SessionException("Session to card missing")
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, EllipticCurvePublicKeyPKCS11):
@@ -290,7 +294,7 @@ class EllipticCurvePrivateKeyPKCS11(PKCS11Token):
                         peer_public_key.curve.key_size != self.curve.key_size
                         and peer_public_key.curve.name != self.curve.name
                     ):
-                        raise Exception(
+                        raise KeyException(
                             "Both keys need to be of curve and length"
                         )
 
@@ -335,7 +339,7 @@ class EllipticCurvePrivateKeyPKCS11(PKCS11Token):
             else:
                 raise UnsupportedAlgorithm("Derive not supported by the card")
         else:
-            raise PyKCS11.PyKCS11Error("Session to card missing")
+            raise SessionException("Session to card missing")
 
     def public_key(self) -> EllipticCurvePublicKeyPKCS11:
         if self._session is not None:
@@ -351,11 +355,11 @@ class EllipticCurvePrivateKeyPKCS11(PKCS11Token):
                     self._session, pubkey, self._operations
                 )
             else:
-                raise Exception(
+                raise KeyException(
                     "Public key with id {0!r} not found".format(self._keyid)
                 )
         else:
-            raise PyKCS11.PyKCS11Error("Session to card missing")
+            raise SessionException("Session to card missing")
 
     @property
     def curve(self) -> EllipticCurve:
@@ -369,7 +373,7 @@ class EllipticCurvePrivateKeyPKCS11(PKCS11Token):
             curve_class = _get_curve_class(bytes(ec_attrs[0]))
             return curve_class()
         else:
-            raise PyKCS11.PyKCS11Error("Session to card missing")
+            raise SessionException("Session to card missing")
 
     @property
     def key_size(self) -> int:
@@ -384,7 +388,7 @@ class EllipticCurvePrivateKeyPKCS11(PKCS11Token):
             curve = curve_class()
             return curve.key_size
         else:
-            raise PyKCS11.PyKCS11Error("Session to card missing")
+            raise SessionException("Session to card missing")
 
     def sign(
         self,
