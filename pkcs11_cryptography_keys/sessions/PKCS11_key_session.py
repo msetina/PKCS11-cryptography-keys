@@ -33,22 +33,33 @@ class PKCS11KeySession(PKCS11Session):
         token_label: str,
         pin: str,
         key_label: str | None = None,
+        key_id: bytes | None = None,
         pksc11_lib: str | None = None,
         logger: Logger | None = None,
     ):
         super().__init__(logger)
         self._key_label = key_label
+        self._key_id = key_id
         self._pksc11_lib = pksc11_lib
         self._token_label = token_label
         self._pin = pin
 
     # get private key reference and get key type and keyid for it
-    def _get_private_key(self, key_label: str | None = None) -> tuple:
+    def _get_private_key(
+        self, key_label: str | None = None, key_id: str | None = None
+    ) -> tuple:
         if self._session is not None:
-            if key_label is None:
+            if key_label is None and key_id is None:
                 private_key = self._session.findObjects(
                     [
                         (CKA_CLASS, CKO_PRIVATE_KEY),
+                    ]
+                )[0]
+            elif key_id is not None:
+                private_key = self._session.findObjects(
+                    [
+                        (CKA_CLASS, CKO_PRIVATE_KEY),
+                        (CKA_ID, key_id),
                     ]
                 )[0]
             else:
