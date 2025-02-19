@@ -84,7 +84,7 @@ class TestCertificates:
                 assert rsa_priv_key is not None
 
             key_session = PKCS11KeySession(
-                label, "1234", "sig_token", _pkcs11lib
+                label, "1234", "sig_token", pksc11_lib=_pkcs11lib
             )
             with key_session as PK:
                 if PK:

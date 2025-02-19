@@ -47,10 +47,10 @@ class TestECKeyExchange:
                 ex_key_1 = None
                 ex_key_2 = None
                 private_1_ses = PKCS11KeySession(
-                    label, "1234", "ec_token_1", _pkcs11lib
+                    label, "1234", "ec_token_1", pksc11_lib=_pkcs11lib
                 )
                 private_2_ses = PKCS11KeySession(
-                    label, "1234", "ec_token_2", _pkcs11lib
+                    label, "1234", "ec_token_2", pksc11_lib=_pkcs11lib
                 )
                 # pkcs11-tool --modul /usr/lib/softhsm/libsofthsm2.so --login -p "123456" --login-type user --id 1 --derive -i alice-public.der -m ECDH1-DERIVE -o bob_shared_secret.raw
                 with private_1_ses as curr_key:
@@ -109,7 +109,7 @@ class TestECKeyExchange:
                 derived_key = None
                 same_derived_key = None
                 private_1_ses = PKCS11KeySession(
-                    label, "1234", "ec_token_1", _pkcs11lib
+                    label, "1234", "ec_token_1", pksc11_lib=_pkcs11lib
                 )
                 with private_1_ses as curr_key:
                     ex_key_1 = curr_key.exchange(
