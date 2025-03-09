@@ -112,7 +112,9 @@ class PKCS11KeySession(PKCS11Session):
             if self._session is not None:
                 if self._login_required:
                     self._session.login(self._pin)
-                keyid, key_type, pk_ref = self._get_private_key(self._key_label)
+                keyid, key_type, pk_ref = self._get_private_key(
+                    self._key_label, self._key_id
+                )
                 module = None
                 module_name = _key_modules.get(key_type, None)
                 if module_name is not None:
