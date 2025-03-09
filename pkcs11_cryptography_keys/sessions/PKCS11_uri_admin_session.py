@@ -25,41 +25,6 @@ class PKCS11URIAdminSession(PKCS11Session):
         self._uri = uri
         self._pin_getter = pin_getter
 
-    # get private key id and label
-    def _get_private_key_info(self, key_label: str | None = None) -> tuple:
-        if self._session is not None:
-            private_key = None
-            if key_label is None:
-                private_key_s = self._session.findObjects(
-                    [
-                        (CKA_CLASS, CKO_PRIVATE_KEY),
-                    ]
-                )
-                if len(private_key_s) > 0:
-                    private_key = private_key_s[0]
-            else:
-                private_key_s = self._session.findObjects(
-                    [
-                        (CKA_CLASS, CKO_PRIVATE_KEY),
-                        (CKA_LABEL, key_label),
-                    ]
-                )
-                if len(private_key_s) > 0:
-                    private_key = private_key_s[0]
-            if private_key is not None:
-                attrs = self._session.getAttributeValue(
-                    private_key,
-                    [CKA_ID, CKA_LABEL],
-                )
-                keyid = bytes(attrs[0])
-                label = attrs[1]
-                return keyid, label
-            else:
-                self._logger.info("Private key could not be found")
-        else:
-            self._logger.info("PKCS11 session is not present")
-        return None, None
-
     # Open session with the card
     # Uses pin if needed, reads permited operations(mechanisms)
     def open(self) -> PKCS11TokenAdmin | None:

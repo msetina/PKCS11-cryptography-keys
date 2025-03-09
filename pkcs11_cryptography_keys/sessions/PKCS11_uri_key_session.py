@@ -28,30 +28,6 @@ class PKCS11URIKeySession(PKCS11Session):
         self._uri = uri
         self._pin_getter = pin_getter
 
-    # get private key reference and get key type and keyid for it
-    # def _get_private_key(self, key_label: str | None = None) -> tuple:
-    #     if self._session is not None:
-    #         if key_label is None:
-    #             private_key = self._session.findObjects(
-    #                 [
-    #                     (CKA_CLASS, CKO_PRIVATE_KEY),
-    #                 ]
-    #             )[0]
-    #         else:
-    #             private_key = self._session.findObjects(
-    #                 [
-    #                     (CKA_CLASS, CKO_PRIVATE_KEY),
-    #                     (CKA_LABEL, key_label),
-    #                 ]
-    #             )[0]
-    #         attrs = self._session.getAttributeValue(
-    #             private_key, [CKA_KEY_TYPE, CKA_ID]
-    #         )
-    #         key_type = attrs[0]
-    #         keyid = bytes(attrs[1])
-    #         return keyid, key_type, private_key
-    #     return None, None, None
-
     # Open session with the card
     # Uses pin if needed, reads permited operations(mechanisms)
     def open(
