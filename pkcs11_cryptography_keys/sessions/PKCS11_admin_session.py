@@ -40,13 +40,24 @@ class PKCS11AdminSession(PKCS11Session):
         self._key_label = key_label
 
     # get private key id and label
-    def _get_private_key_info(self, key_label: str | None = None) -> tuple:
+    def _get_private_key_info(
+        self, key_label: str | None = None, key_id: str | None = None
+    ) -> tuple:
         if self._session is not None:
             private_key = None
-            if key_label is None:
+            if key_label is None and key_id is None:
                 private_key_s = self._session.findObjects(
                     [
                         (CKA_CLASS, CKO_PRIVATE_KEY),
+                    ]
+                )
+                if len(private_key_s) > 0:
+                    private_key = private_key_s[0]
+            elif key_id is not None:
+                private_key_s = self._session.findObjects(
+                    [
+                        (CKA_CLASS, CKO_PRIVATE_KEY),
+                        (CKA_ID, key_id),
                     ]
                 )
                 if len(private_key_s) > 0:
@@ -106,7 +117,9 @@ class PKCS11AdminSession(PKCS11Session):
                         self._session.login(self._pin)
                     else:
                         self._session.login(self._pin, CKU_SO)
-                pk_info = self._get_private_key_info(self._key_label)
+                pk_info = self._get_private_key_info(
+                    self._key_label, self._key_id
+                )
                 if pk_info is not None:
                     keyid, label = pk_info
                     if keyid is None:
