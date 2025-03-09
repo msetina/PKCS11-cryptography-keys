@@ -42,7 +42,7 @@ class PKCS11TokenAdmin:
             for pub_o in public_objects:
                 self._session.destroyObject(pub_o)
                 self._logger.info(
-                    "Public key deleted. ID: {0}".format(self._keyid)
+                    "Public key deleted. ID: {0!r}".format(self._keyid)
                 )
             private_objects = self._session.findObjects(
                 [
@@ -53,7 +53,7 @@ class PKCS11TokenAdmin:
             for priv_o in private_objects:
                 self._session.destroyObject(priv_o)
                 self._logger.info(
-                    "Private key deleted. ID: {0}".format(self._keyid)
+                    "Private key deleted. ID: {0!r}".format(self._keyid)
                 )
                 ret = True
         return ret
