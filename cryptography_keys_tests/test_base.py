@@ -83,6 +83,160 @@ class TestBasic:
                 assert ku == keydef
                 assert r
 
+    def test_multi_key_per_token(self):
+        from cryptography.hazmat.primitives.asymmetric.ec import SECP384R1
+
+        from pkcs11_cryptography_keys import (
+            KeyTypes,
+            PKCS11KeyUsageAll,
+            PKCS11AdminSession,
+            PKCS11KeySession,
+            PKCS11KeyUsageAllNoDerive,
+            list_token_labels,
+        )
+
+        for label in list_token_labels(_pkcs11lib):
+            rsa_id_c = b"\x01"
+            ec_id_c = b"\x02"
+            rsa_label_c = "rsa key"
+            ec_label_c = "ec key"
+            a_RSA_session = PKCS11AdminSession(
+                label,
+                "1234",
+                True,
+                pksc11_lib=_pkcs11lib,
+                key_id=rsa_id_c,
+                key_label=rsa_label_c,
+            )
+            with a_RSA_session as current_admin:
+                keydef = PKCS11KeyUsageAllNoDerive()
+                rsa_priv_key = current_admin.create_key_pair(
+                    keydef, key_type=KeyTypes.RSA, RSA_length=2048
+                )
+                rsa_id, rsa_label = rsa_priv_key.get_id_and_label()
+            assert rsa_priv_key is not None
+            a_EC_session = PKCS11AdminSession(
+                label,
+                "1234",
+                True,
+                pksc11_lib=_pkcs11lib,
+                key_id=ec_id_c,
+                key_label=ec_label_c,
+            )
+            with a_EC_session as current_admin:
+                keydef = PKCS11KeyUsageAll()
+                ec_priv_key = current_admin.create_key_pair(
+                    keydef, key_type=KeyTypes.EC, EC_curve=SECP384R1()
+                )
+                ec_id, ec_label = ec_priv_key.get_id_and_label()
+            assert ec_priv_key is not None
+
+            k_RSA_session = PKCS11KeySession(
+                label, "1234", key_id=rsa_id, pksc11_lib=_pkcs11lib
+            )
+            with k_RSA_session as current_key:
+                t_rsa_id, t_rsa_label = current_key.get_id_and_label()
+                assert (rsa_id, rsa_label) == (t_rsa_id, t_rsa_label)
+                assert (rsa_id_c, rsa_label_c) == (t_rsa_id, t_rsa_label)
+
+            k_RSA_session_l = PKCS11KeySession(
+                label, "1234", key_label=rsa_label, pksc11_lib=_pkcs11lib
+            )
+            with k_RSA_session_l as current_key:
+                t2_rsa_id, t2_rsa_label = current_key.get_id_and_label()
+                assert (rsa_id, rsa_label) == (t2_rsa_id, t2_rsa_label)
+                assert (rsa_id_c, rsa_label_c) == (t2_rsa_id, t2_rsa_label)
+
+            k_EC_session = PKCS11KeySession(
+                label, "1234", key_id=ec_id, pksc11_lib=_pkcs11lib
+            )
+            with k_EC_session as current_key:
+                t_ec_id, t_ec_label = current_key.get_id_and_label()
+                assert (ec_id, ec_label) == (t_ec_id, t_ec_label)
+                assert (ec_id_c, ec_label_c) == (t_ec_id, t_ec_label)
+
+            k_EC_session_l = PKCS11KeySession(
+                label, "1234", key_label=ec_label, pksc11_lib=_pkcs11lib
+            )
+            with k_EC_session_l as current_key:
+                t2_ec_id, t2_ec_label = current_key.get_id_and_label()
+                assert (ec_id, ec_label) == (t2_ec_id, t2_ec_label)
+                assert (ec_id_c, ec_label_c) == (t2_ec_id, t2_ec_label)
+
+            with a_RSA_session as current_admin:
+                r = current_admin.delete_key_pair()
+                assert r
+
+            with a_EC_session as current_admin2:
+                r2 = current_admin2.delete_key_pair()
+                assert r2
+
+    def test_multi_key_per_token_key_id(self):
+        from cryptography.hazmat.primitives.asymmetric.ec import SECP384R1
+
+        from pkcs11_cryptography_keys import (
+            KeyTypes,
+            PKCS11KeyUsageAll,
+            PKCS11AdminSession,
+            PKCS11KeySession,
+            PKCS11KeyUsageAllNoDerive,
+            list_token_labels,
+        )
+
+        for label in list_token_labels(_pkcs11lib):
+            rsa_id_c = b"\x01"
+            ec_id_c = b"\x02"
+            a_RSA_session = PKCS11AdminSession(
+                label,
+                "1234",
+                True,
+                pksc11_lib=_pkcs11lib,
+                key_id=rsa_id_c,
+            )
+            with a_RSA_session as current_admin:
+                keydef = PKCS11KeyUsageAllNoDerive()
+                rsa_priv_key = current_admin.create_key_pair(
+                    keydef, key_type=KeyTypes.RSA, RSA_length=2048
+                )
+                rsa_id, rsa_label = rsa_priv_key.get_id_and_label()
+            assert rsa_priv_key is not None
+            a_EC_session = PKCS11AdminSession(
+                label,
+                "1234",
+                True,
+                pksc11_lib=_pkcs11lib,
+                key_id=ec_id_c,
+            )
+            with a_EC_session as current_admin:
+                keydef = PKCS11KeyUsageAll()
+                ec_priv_key = current_admin.create_key_pair(
+                    keydef, key_type=KeyTypes.EC, EC_curve=SECP384R1()
+                )
+                ec_id, ec_label = ec_priv_key.get_id_and_label()
+            assert ec_priv_key is not None
+
+            k_RSA_session = PKCS11KeySession(
+                label, "1234", key_id=rsa_id, pksc11_lib=_pkcs11lib
+            )
+            with k_RSA_session as current_key:
+                t_rsa_id, t_rsa_label = current_key.get_id_and_label()
+                assert (rsa_id, rsa_label) == (t_rsa_id, t_rsa_label)
+
+            k_EC_session = PKCS11KeySession(
+                label, "1234", key_id=ec_id, pksc11_lib=_pkcs11lib
+            )
+            with k_EC_session as current_key:
+                t_ec_id, t_ec_label = current_key.get_id_and_label()
+                assert (ec_id, ec_label) == (t_ec_id, t_ec_label)
+
+            with a_RSA_session as current_admin:
+                r = current_admin.delete_key_pair()
+                assert r
+
+            with a_EC_session as current_admin2:
+                r2 = current_admin2.delete_key_pair()
+                assert r2
+
     def test_rsa_encryption_PKCS1v15(self):
         from cryptography.hazmat.primitives.asymmetric import padding
 
