@@ -14,10 +14,9 @@ from PyKCS11 import (
     PyKCS11Lib,
 )
 
-from pkcs11_cryptography_keys.keys.ec import EllipticCurvePrivateKeyPKCS11
-from pkcs11_cryptography_keys.keys.rsa import RSAPrivateKeyPKCS11
-from pkcs11_cryptography_keys.utils.token_properties import TokenProperties
-
+from ..keys.ec import EllipticCurvePrivateKeyPKCS11
+from ..keys.rsa import RSAPrivateKeyPKCS11
+from ..utils.token_properties import TokenProperties
 from .PKCS11_session import PKCS11Session
 
 _key_modules = {
@@ -49,34 +48,42 @@ class PKCS11KeySession(PKCS11Session):
         self, key_label: str | None = None, key_id: str | None = None
     ) -> tuple:
         if self._session is not None:
+            private_key = None
             if key_label is None and key_id is None:
-                private_key = self._session.findObjects(
+                private_keys = self._session.findObjects(
                     [
                         (CKA_CLASS, CKO_PRIVATE_KEY),
                     ]
-                )[0]
+                )
+                if len(private_keys) > 0:
+                    private_key = private_keys[0]
             elif key_id is not None:
-                private_key = self._session.findObjects(
+                private_keys = self._session.findObjects(
                     [
                         (CKA_CLASS, CKO_PRIVATE_KEY),
                         (CKA_ID, key_id),
                     ]
-                )[0]
+                )
+                if len(private_keys) > 0:
+                    private_key = private_keys[0]
             else:
-                private_key = self._session.findObjects(
+                private_keys = self._session.findObjects(
                     [
                         (CKA_CLASS, CKO_PRIVATE_KEY),
                         (CKA_LABEL, key_label),
                     ]
-                )[0]
-            attrs = self._session.getAttributeValue(
-                private_key, [CKA_KEY_TYPE, CKA_ID]
-            )
-            key_type = attrs[0]
-            keyid = bytes(attrs[1])
-            return keyid, key_type, private_key
+                )
+                if len(private_keys) > 0:
+                    private_key = private_keys[0]
+            if private_key is not None:
+                attrs = self._session.getAttributeValue(
+                    private_key, [CKA_KEY_TYPE, CKA_ID]
+                )
+                key_type = attrs[0]
+                keyid = bytes(attrs[1])
+                return keyid, key_type, private_key
         else:
-            self._logger.info("PKCS11 session is ot present")
+            self._logger.info("PKCS11 session is not present")
         return None, None, None
 
     # Open session with the card
