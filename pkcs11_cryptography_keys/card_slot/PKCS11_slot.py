@@ -32,24 +32,24 @@ class PKCS11Slot:
                     continue
 
                 cert = bytes(attributes[0])
-                cert = x509.load_der_x509_certificate(
+                cert_o = x509.load_der_x509_certificate(
                     cert, backend=default_backend()
                 )
-                data = {}
+                data: dict = {}
                 data["ID"] = bytes(attributes[2])
-                data["version"] = cert.version
-                data["serial_number"] = cert.serial_number
-                data["singature_algorithm"] = cert.signature_algorithm_oid
-                data["not_valid_before"] = cert.not_valid_before_utc
-                data["not_valid_after"] = cert.not_valid_after_utc
+                data["version"] = cert_o.version
+                data["serial_number"] = cert_o.serial_number
+                data["singature_algorithm"] = cert_o.signature_algorithm_oid
+                data["not_valid_before"] = cert_o.not_valid_before_utc
+                data["not_valid_after"] = cert_o.not_valid_after_utc
                 data["fingerprint"] = {}
-                data["fingerprint"]["SHA1"] = cert.fingerprint(SHA1())
-                data["fingerprint"]["SHA256"] = cert.fingerprint(SHA256())
-                pubkey = cert.public_key()
+                data["fingerprint"]["SHA1"] = cert_o.fingerprint(SHA1())
+                data["fingerprint"]["SHA256"] = cert_o.fingerprint(SHA256())
+                pubkey = cert_o.public_key()
                 data["public_key"] = pubkey
-                data["subject"] = cert.subject
+                data["subject"] = cert_o.subject
                 data["issuer"] = {}
-                for issuer_data in cert.issuer:
+                for issuer_data in cert_o.issuer:
                     if issuer_data.oid._name == "Unknown OID":
                         data["issuer"][issuer_data.oid.dotted_string] = (
                             issuer_data.oid,
@@ -61,7 +61,7 @@ class PKCS11Slot:
                             issuer_data.value,
                         )
                 data["personal"] = {}
-                for pers_data in cert.subject:
+                for pers_data in cert_o.subject:
                     if pers_data.oid._name == "Unknown OID":
                         data["personal"][pers_data.oid.dotted_string] = (
                             pers_data.oid,
@@ -73,7 +73,7 @@ class PKCS11Slot:
                             pers_data.value,
                         )
                 data["extensions"] = {True: {}, False: {}}
-                for exten in cert.extensions:
+                for exten in cert_o.extensions:
                     if exten.oid._name == "Unknown OID":
                         data["extensions"][exten.critical][
                             exten.oid.dotted_string
