@@ -6,9 +6,7 @@ from cryptography.exceptions import UnsupportedAlgorithm
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 
-from pkcs11_cryptography_keys.card_token.PKCS11_key_definition import (
-    read_key_usage_from_key,
-)
+from ..card_token.PKCS11_key_definition import read_key_usage_from_key
 
 
 # Token representation
@@ -98,10 +96,10 @@ class PKCS11Token:
 
                 attr_dict = dict(list(zip(all_attributes, attributes)))
                 cert = bytes(attr_dict[PyKCS11.CKA_VALUE])
-                cert = x509.load_der_x509_certificate(
+                cert_o = x509.load_der_x509_certificate(
                     cert, backend=default_backend()
                 )
-                certificate = cert.public_bytes(
+                certificate = cert_o.public_bytes(
                     encoding=serialization.Encoding.PEM
                 )
             return certificate
@@ -125,11 +123,11 @@ class PKCS11Token:
                     continue
 
                 cert = bytes(attributes[0])
-                cert = x509.load_der_x509_certificate(
+                cert_o = x509.load_der_x509_certificate(
                     cert, backend=default_backend()
                 )
                 ca_chain.append(
-                    cert.public_bytes(encoding=serialization.Encoding.PEM)
+                    cert_o.public_bytes(encoding=serialization.Encoding.PEM)
                 )
             return b"".join(ca_chain)
 
