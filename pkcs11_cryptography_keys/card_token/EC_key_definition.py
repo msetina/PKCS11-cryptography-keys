@@ -8,9 +8,7 @@ from cryptography.hazmat.primitives.serialization import (
     PublicFormat,
 )
 
-from pkcs11_cryptography_keys.card_token.PKCS11_key_definition import (
-    KeyObjectTypes,
-)
+from ..card_token.PKCS11_key_definition import KeyObjectTypes
 
 key_type = {
     "generation_mechanism": PyKCS11.MechanismECGENERATEKEYPAIR,
@@ -70,6 +68,7 @@ def load_key(template: list, tag: KeyObjectTypes, **kwargs) -> bool:
             template.extend(
                 [
                     (PyKCS11.CKA_EC_PARAMS, ec_params),
+                    # (PyKCS11.CKA_EC_POINT, point),
                 ]
             )
             if tag == KeyObjectTypes.private:
