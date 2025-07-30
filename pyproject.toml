@@ -11,7 +11,7 @@ name = "PKCS11-cryptography-keys"
 description = "Python chryptography keys implemented on to the PKCS11 interface"
 authors = [{name = "Miha Šetina", email = "miha.setina@gmail.com"}]
 maintainers = [{name = "Miha Šetina", email = "miha.setina@gmail.com"}]
-license = {text = "APACHE,BSD"}
+license = "BSD-3-Clause"
 keywords = [
     "cryptography",    
     "pkcs11",
@@ -21,8 +21,6 @@ classifiers = [
     "Intended Audience :: Information Technology",
     "Intended Audience :: Developers",
     "Operating System :: OS Independent",
-    "License :: OSI Approved :: Apache Software License",
-    "License :: OSI Approved :: BSD License",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -35,7 +33,7 @@ dependencies = [
     "cryptography>=42.0.5",
     "asn1crypto>=1.5.1"
 ]
-version = "0.0.5"
+version = "0.0.6"
 
 [project.readme]
 file = "README.rst"
@@ -59,7 +57,6 @@ mypy = [
 
 [tool.setuptools]
 include-package-data = false
-license-files = ["LICENSE"]
 
 [tool.setuptools.packages.find]
 include = ["pkcs11_cryptography_keys*"]
