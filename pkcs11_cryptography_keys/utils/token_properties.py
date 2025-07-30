@@ -1,5 +1,21 @@
 from enum import Enum
 
+from .token_enums import (
+    TokenPINProperties,
+    TokenPrivateMemory,
+    TokenPropertiesEnum,
+    TokenPublicMemory,
+    TokenSession,
+)
+from .token_flag_enums import (
+    TokenAuthentication,
+    TokenFeatures,
+    TokenInit,
+    TokenOperability,
+    TokenSOPIN,
+    TokenUserPIN,
+)
+
 
 class PinState(Enum):
     Uninitialized = -1
@@ -36,94 +52,97 @@ class TokenProperties(object):
             yield flag
 
     def is_initialized(self):
-        if "CKF_TOKEN_INITIALIZED" in self._set_flags:
+        if TokenInit.TOKEN_INITIALIZED.value in self._set_flags:
             return True
         else:
             return False
 
     def is_login_required(self):
-        if "CKF_LOGIN_REQUIRED" in self._set_flags:
+        if TokenAuthentication.LOGIN_REQUIRED.value in self._set_flags:
             return True
         else:
             return False
 
     def is_read_only(self):
-        if "CKF_WRITE_PROTECTED" in self._set_flags:
+        if TokenOperability.WRITE_PROTECTED.value in self._set_flags:
             return True
         else:
             return False
 
     def has_RNG(self):
-        if "CKF_RNG" in self._set_flags:
+        if TokenFeatures.RNG.value in self._set_flags:
             return True
         else:
             return False
 
     def has_clock(self):
-        if "CKF_CLOCK_ON_TOKEN" in self._set_flags:
+        if TokenFeatures.CLOCK_ON_TOKEN.value in self._set_flags:
             return True
         else:
             return False
 
     def has_proteced_authentication_path(self):
-        if "CKF_PROTECTED_AUTHENTICATION_PATH" in self._set_flags:
+        if (
+            TokenAuthentication.PROTECTED_AUTHENTICATION_PATH.value
+            in self._set_flags
+        ):
             return True
         else:
             return False
 
     def has_dual_crypto_operations(self):
-        if "CKF_DUAL_CRYPTO_OPERATIONS" in self._set_flags:
+        if TokenOperability.DUAL_CRYPTO_OPERATIONS.value in self._set_flags:
             return True
         else:
             return False
 
     def get_max_session_count(self):
-        return self._properties["ulMaxSessionCount"]
+        return self._properties[TokenSession.ulMaxSessionCount.value]
 
     def get_max_rw_session_count(self):
-        return self._properties["ulMaxRwSessionCount"]
+        return self._properties[TokenSession.ulMaxRwSessionCount.value]
 
     def get_session_count(self):
-        return self._properties["ulSessionCount"]
+        return self._properties[TokenSession.ulSessionCount.value]
 
     def get_rw_session_count(self):
-        return self._properties["ulRwSessionCount"]
+        return self._properties[TokenSession.ulRwSessionCount.value]
 
     def get_total_public_memory(self):
-        return self._properties["ulTotalPublicMemory"]
+        return self._properties[TokenPublicMemory.ulTotalPublicMemory.value]
 
     def get_free_public_memory(self):
-        return self._properties["ulFreePublicMemory"]
+        return self._properties[TokenPublicMemory.ulFreePublicMemory.value]
 
     def get_total_private_memory(self):
-        return self._properties["ulTotalPrivateMemory"]
+        return self._properties[TokenPrivateMemory.ulTotalPrivateMemory.value]
 
     def get_free_private_memory(self):
-        return self._properties["ulFreePrivateMemory"]
+        return self._properties[TokenPrivateMemory.ulFreePrivateMemory.value]
 
     def get_label(self):
-        return self._properties["label"]
+        return self._properties[TokenPropertiesEnum.label.value]
 
     def get_manufacturer_id(self):
-        return self._properties["manufacturerID"]
+        return self._properties[TokenPropertiesEnum.manufacturerID.value]
 
     def get_model(self):
-        return self._properties["model"]
+        return self._properties[TokenPropertiesEnum.model.value]
 
     def get_serialNumber(self):
-        return self._properties["serialNumber"]
+        return self._properties[TokenPropertiesEnum.serialNumber.value]
 
     def get_hardware_version(self):
-        return self._properties["hardwareVersion"]
+        return self._properties[TokenPropertiesEnum.hardwareVersion.value]
 
     def get_firmware_version(self):
-        return self._properties["firmwareVersion"]
+        return self._properties[TokenPropertiesEnum.firmwareVersion.value]
 
     def get_max_pin_length(self):
-        return self._properties["ulMaxPinLen"]
+        return self._properties[TokenPINProperties.ulMaxPinLen.value]
 
     def get_min_pin_length(self):
-        return self._properties["ulMinPinLen"]
+        return self._properties[TokenPINProperties.ulMinPinLen.value]
 
     def check_pin_length(self, pin: str):
         l = len(pin)
@@ -134,15 +153,15 @@ class TokenProperties(object):
 
     def get_user_pin_state(self):
         ret = PinState.OK
-        if "CKF_USER_PIN_INITIALIZED" not in self._set_flags:
+        if TokenInit.USER_PIN_INITIALIZED.value not in self._set_flags:
             return PinState.Uninitialized
-        if "CKF_USER_PIN_LOCKED" in self._set_flags:
+        if TokenUserPIN.USER_PIN_LOCKED.value in self._set_flags:
             ret = PinState.Locked
-        elif "CKF_USER_PIN_FINAL_TRY" in self._set_flags:
+        elif TokenUserPIN.USER_PIN_FINAL_TRY.value in self._set_flags:
             ret = PinState.FinalTry
-        elif "CKF_USER_PIN_COUNT_LOW" in self._set_flags:
+        elif TokenUserPIN.USER_PIN_COUNT_LOW.value in self._set_flags:
             ret = PinState.CountLow
-        elif "CKF_USER_PIN_TO_BE_CHANGED" in self._set_flags:
+        elif TokenUserPIN.USER_PIN_TO_BE_CHANGED.value in self._set_flags:
             ret = PinState.ToBeChanged
         return ret
 
@@ -150,12 +169,12 @@ class TokenProperties(object):
         ret = PinState.OK
         if not self.is_initialized():
             return PinState.Uninitialized
-        if "CKF_SO_PIN_LOCKED" in self._set_flags:
+        if TokenSOPIN.SO_PIN_LOCKED.value in self._set_flags:
             ret = PinState.Locked
-        elif "CKF_SO_PIN_FINAL_TRY" in self._set_flags:
+        elif TokenSOPIN.SO_PIN_FINAL_TRY.value in self._set_flags:
             ret = PinState.FinalTry
-        elif "CKF_SO_PIN_COUNT_LOW" in self._set_flags:
+        elif TokenSOPIN.SO_PIN_COUNT_LOW.value in self._set_flags:
             ret = PinState.CountLow
-        elif "CKF_SO_PIN_TO_BE_CHANGED" in self._set_flags:
+        elif TokenSOPIN.SO_PIN_TO_BE_CHANGED.value in self._set_flags:
             ret = PinState.ToBeChanged
         return ret
