@@ -23,12 +23,8 @@ from cryptography.hazmat.primitives.asymmetric.rsa import (
     RSAPublicNumbers,
 )
 
-from pkcs11_cryptography_keys.card_token.PKCS11_token import PKCS11Token
-from pkcs11_cryptography_keys.utils.exceptions import (
-    KeyException,
-    SessionException,
-    TokenException,
-)
+from ..card_token.PKCS11_token import PKCS11Token
+from ..utils.exceptions import KeyException, SessionException, TokenException
 
 _hash_translation = {
     hashes.SHA1: PyKCS11.CKM_SHA_1,
@@ -137,6 +133,12 @@ mgf_methods = {
     # hashes.SHA3_384: PyKCS11.CKG_MGF1_SHA3_384,
     # hashes.SHA3_512: PyKCS11.CKG_MGF1_SHA3_512,
 }
+
+
+def get_mechanism_definition(mechanism_name: str):
+    mech = PyKCS11.CKM[mechanism_name]
+    if mech in _digest_algorithm_implementations:
+        return _digest_algorithm_implementations[mech]
 
 
 def _get_salt_length_int(key, hash, padding):
