@@ -2,7 +2,7 @@ from importlib import import_module
 
 import PyKCS11
 
-from pkcs11_cryptography_keys.card_token.PKCS11_key_definition import (
+from ..card_token.PKCS11_key_definition import (
     KeyObjectTypes,
     KeyTypes,
     PKCS11KeyIdent,
@@ -15,6 +15,13 @@ _key_types = {
     KeyTypes.EC: "pkcs11_cryptography_keys.card_token.EC_key_definition",
     KeyTypes.RSA: "pkcs11_cryptography_keys.card_token.RSA_key_definition",
 }
+
+
+def get_key_definition(key_type: KeyTypes):
+    if key_type in _key_types:
+        return _key_types[key_type]
+    else:
+        return None
 
 
 class PKCS11KeypairDefinition(object):
