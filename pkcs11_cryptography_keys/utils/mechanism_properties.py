@@ -34,12 +34,6 @@ class MechanismProperties(object):
         for flag in self._set_flags:
             yield flag
 
-    def is_token_present(self):
-        if "CKF_TOKEN_PRESENT" in self._set_flags:
-            return True
-        else:
-            return False
-
     def is_hardware_supported(self):
         if "CKF_HW" in self._set_flags:
             return True
