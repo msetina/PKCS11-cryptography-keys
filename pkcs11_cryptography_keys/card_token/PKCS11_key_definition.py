@@ -21,12 +21,12 @@ class KeyObjectTypes(Enum):
         return super().__str__().replace("KeyObjectTypes.", "")
 
 
-class OperationTypes(Enum):
-    CRYPT = 1
-    SIGN = 2
-    WRAP = 3
-    DERIVE = 4
-    RECOVER = 5
+class OperationTypes(str, Enum):
+    CRYPT = "encrypt/decrypt"
+    SIGN = "sign/verify"
+    WRAP = "wrap/unwrap"
+    DERIVE = "derive"
+    RECOVER = "sign recover/verify recover"
 
     def __str__(self):
         return super().__str__().replace("OperationTypes.", "")
@@ -181,7 +181,7 @@ class PKCS11KeyUsage(object):
         list_true = []
         for k, v in self._usage.items():
             if v:
-                list_true.append(str(k))
+                list_true.append(k.name)
         return list_true
 
     def __str__(self) -> str:
@@ -199,12 +199,22 @@ class PKCS11KeyUsageAllNoDerive(PKCS11KeyUsage):
         super().__init__(True, True, True, True, False)
 
 
+class PKCS11KeyUsageAllNoEncrypt(PKCS11KeyUsage):
+    def __init__(self) -> None:
+        super().__init__(False, True, True, True, True)
+
+
+class PKCS11KeyUsageDerive(PKCS11KeyUsage):
+    def __init__(self) -> None:
+        super().__init__(False, False, False, False, True)
+
+
 class PKCS11KeyUsageSignature(PKCS11KeyUsage):
     def __init__(self) -> None:
         super().__init__(False, True, False, True, False)
 
 
-class PKCS11KeyUsageEncyrption(PKCS11KeyUsage):
+class PKCS11KeyUsageEncryption(PKCS11KeyUsage):
     def __init__(self) -> None:
         super().__init__(True, False, True, False, False)
 
@@ -234,7 +244,7 @@ def read_key_usage_from_key(session, key_ref) -> PKCS11KeyUsage | None:
         if tag in _key_usage:
             for k, v in _key_usage[tag].items():
                 atr_template.append(v)
-                usage_list.append(str(k))
+                usage_list.append(k.name)
             attrs = session.getAttributeValue(key_ref, atr_template)
             rezult = dict(zip(usage_list, attrs))
             return PKCS11KeyUsage(**rezult)
