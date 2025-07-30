@@ -1,7 +1,7 @@
 import PyKCS11
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey
 
-from pkcs11_cryptography_keys.card_token.PKCS11_key_definition import (
+from ..card_token.PKCS11_key_definition import (
     KeyObjectTypes,
     to_biginteger_bytes,
 )

@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Callable
 
-from pkcs11_cryptography_keys.utils.exceptions import CallbackException
+from ..utils.exceptions import CallbackException
 
 
 class PinTypes(Enum):

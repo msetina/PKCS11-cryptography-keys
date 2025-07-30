@@ -3,7 +3,7 @@ from asn1crypto.core import UTF8String
 from cryptography.hazmat.primitives.serialization import Encoding
 from cryptography.x509 import Certificate
 
-from pkcs11_cryptography_keys.card_token.PKCS11_key_definition import (
+from ..card_token.PKCS11_key_definition import (
     KeyObjectTypes,
     PKCS11KeyIdent,
     _key_head,

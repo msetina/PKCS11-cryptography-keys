@@ -3,11 +3,10 @@ from logging import Logger
 
 from PyKCS11 import CKK_ECDSA, CKK_RSA
 
-from pkcs11_cryptography_keys.keys.ec import EllipticCurvePrivateKeyPKCS11
-from pkcs11_cryptography_keys.keys.rsa import RSAPrivateKeyPKCS11
-from pkcs11_cryptography_keys.pkcs11_URI.pkcs11_URI import PKCS11URI
-from pkcs11_cryptography_keys.utils.pin_4_token import Pin4Token
-
+from ..keys.ec import EllipticCurvePrivateKeyPKCS11
+from ..keys.rsa import RSAPrivateKeyPKCS11
+from ..pkcs11_URI.pkcs11_URI import PKCS11URI
+from ..utils.pin_4_token import Pin4Token
 from .PKCS11_session import PKCS11Session
 
 _key_modules = {

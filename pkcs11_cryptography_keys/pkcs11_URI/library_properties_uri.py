@@ -1,8 +1,7 @@
 from urllib.parse import quote
 
-from pkcs11_cryptography_keys.utils.exceptions import UriException
-from pkcs11_cryptography_keys.utils.library_properties import LibraryProperties
-
+from ..utils.exceptions import UriException
+from ..utils.library_properties import LibraryProperties
 from .definitions import CK_INFO_translation, ParameterMatch
 
 

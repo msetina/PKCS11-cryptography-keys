@@ -1,7 +1,6 @@
 from urllib.parse import quote
 
-from pkcs11_cryptography_keys.utils.token_properties import TokenProperties
-
+from ..utils.token_properties import TokenProperties
 from .definitions import CK_TOKEN_INFO_translation, ParameterMatch
 
 

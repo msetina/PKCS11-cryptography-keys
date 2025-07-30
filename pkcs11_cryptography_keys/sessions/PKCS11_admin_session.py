@@ -11,11 +11,8 @@ from PyKCS11 import (
     PyKCS11Lib,
 )
 
-from pkcs11_cryptography_keys.card_token.PKCS11_token_admin import (
-    PKCS11TokenAdmin,
-)
-from pkcs11_cryptography_keys.utils.token_properties import TokenProperties
-
+from ..card_token.PKCS11_token_admin import PKCS11TokenAdmin
+from ..utils.token_properties import TokenProperties
 from .PKCS11_session import PKCS11Session
 
 

@@ -2,9 +2,8 @@ from logging import Logger
 
 from PyKCS11 import CKF_RW_SESSION, CKF_SERIAL_SESSION, PyKCS11Lib
 
-from pkcs11_cryptography_keys.card_slot.PKCS11_slot import PKCS11Slot
-from pkcs11_cryptography_keys.utils.token_properties import TokenProperties
-
+from ..card_slot.PKCS11_slot import PKCS11Slot
+from ..utils.token_properties import TokenProperties
 from .PKCS11_session import PKCS11Session
 
 

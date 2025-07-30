@@ -3,11 +3,8 @@ from urllib.parse import quote, quote_from_bytes
 
 from PyKCS11 import CKA_CLASS, CKA_ID, CKA_LABEL, CKF_SERIAL_SESSION, PyKCS11Lib
 
-from pkcs11_cryptography_keys.pkcs11_URI.library_properties_uri import (
-    LibraryPropertiesURI,
-)
-
 from .definitions import PKCS11_type_translation
+from .library_properties_uri import LibraryPropertiesURI
 from .slot_properties_uri import SlotPropertiesURI
 from .token_properties_uri import TokenPropertiesURI
 

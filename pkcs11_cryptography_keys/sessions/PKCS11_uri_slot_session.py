@@ -1,9 +1,8 @@
 from logging import Logger
 
-from pkcs11_cryptography_keys.card_slot.PKCS11_slot import PKCS11Slot
-from pkcs11_cryptography_keys.pkcs11_URI.pkcs11_URI import PKCS11URI
-from pkcs11_cryptography_keys.utils.pin_4_token import Pin4Token
-
+from ..card_slot.PKCS11_slot import PKCS11Slot
+from ..pkcs11_URI.pkcs11_URI import PKCS11URI
+from ..utils.pin_4_token import Pin4Token
 from .PKCS11_session import PKCS11Session
 
 

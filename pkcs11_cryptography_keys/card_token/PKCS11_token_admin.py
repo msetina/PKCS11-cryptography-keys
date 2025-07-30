@@ -4,16 +4,11 @@ from logging import Logger, getLogger
 import PyKCS11
 from cryptography.x509 import Certificate
 
-from pkcs11_cryptography_keys.card_token.PKCS11_key_definition import (
-    KeyObjectTypes,
-    PKCS11KeyUsage,
-)
-from pkcs11_cryptography_keys.card_token.PKCS11_keypair import PKCS11KeyPair
-from pkcs11_cryptography_keys.card_token.PKCS11_X509_certificate import (
-    PKCS11X509Certificate,
-)
-from pkcs11_cryptography_keys.keys.ec import EllipticCurvePrivateKeyPKCS11
-from pkcs11_cryptography_keys.keys.rsa import RSAPrivateKeyPKCS11
+from ..card_token.PKCS11_key_definition import KeyObjectTypes, PKCS11KeyUsage
+from ..card_token.PKCS11_keypair import PKCS11KeyPair
+from ..card_token.PKCS11_X509_certificate import PKCS11X509Certificate
+from ..keys.ec import EllipticCurvePrivateKeyPKCS11
+from ..keys.rsa import RSAPrivateKeyPKCS11
 
 
 # Token representation

@@ -2,12 +2,9 @@ from logging import Logger
 
 from PyKCS11 import CKA_CLASS, CKA_ID, CKA_LABEL, CKO_PRIVATE_KEY
 
-from pkcs11_cryptography_keys.card_token.PKCS11_token_admin import (
-    PKCS11TokenAdmin,
-)
-from pkcs11_cryptography_keys.pkcs11_URI.pkcs11_URI import PKCS11URI
-from pkcs11_cryptography_keys.utils.pin_4_token import Pin4Token
-
+from ..card_token.PKCS11_token_admin import PKCS11TokenAdmin
+from ..pkcs11_URI.pkcs11_URI import PKCS11URI
+from ..utils.pin_4_token import Pin4Token
 from .PKCS11_session import PKCS11Session
 
 

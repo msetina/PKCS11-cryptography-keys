@@ -1,11 +1,8 @@
 # Token representation
 from logging import getLogger
 
-from pkcs11_cryptography_keys.utils.exceptions import PinException
-from pkcs11_cryptography_keys.utils.token_properties import (
-    PinState,
-    TokenProperties,
-)
+from ..utils.exceptions import PinException
+from ..utils.token_properties import PinState, TokenProperties
 
 
 class PKCS11SlotAdmin:

@@ -1,7 +1,6 @@
 from urllib.parse import quote
 
-from pkcs11_cryptography_keys.utils.slot_properties import SlotProperties
-
+from ..utils.slot_properties import SlotProperties
 from .definitions import CK_SLOT_INFO_translation, ParameterMatch
 
 

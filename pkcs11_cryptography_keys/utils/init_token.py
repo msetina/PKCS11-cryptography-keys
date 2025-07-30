@@ -1,13 +1,7 @@
 from PyKCS11 import CKF_RW_SESSION, CKF_SERIAL_SESSION, CKU_SO, PyKCS11Lib
 
-from pkcs11_cryptography_keys.utils.exceptions import (
-    PinException,
-    TokenException,
-)
-from pkcs11_cryptography_keys.utils.token_properties import (
-    PinState,
-    TokenProperties,
-)
+from ..utils.exceptions import PinException, TokenException
+from ..utils.token_properties import PinState, TokenProperties
 
 
 def __create_token(lib, slot, soPin: str, label: str, userPin: str):

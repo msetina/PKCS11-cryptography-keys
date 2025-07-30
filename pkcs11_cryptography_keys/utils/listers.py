@@ -2,10 +2,8 @@ from logging import Logger
 
 from PyKCS11 import CKF_TOKEN_INITIALIZED, PyKCS11Lib
 
-from pkcs11_cryptography_keys.sessions.PKCS11_admin_session import (
-    PKCS11AdminSession,
-)
-from pkcs11_cryptography_keys.utils.token_properties import TokenProperties
+from ..sessions.PKCS11_admin_session import PKCS11AdminSession
+from ..utils.token_properties import TokenProperties
 
 
 # Support function to list admin sessions

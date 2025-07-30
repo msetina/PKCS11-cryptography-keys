@@ -17,12 +17,8 @@ from PyKCS11 import (
     Session,
 )
 
-from pkcs11_cryptography_keys.utils.exceptions import (
-    SessionException,
-    UriException,
-)
-from pkcs11_cryptography_keys.utils.pin_4_token import Pin4Token, PinTypes
-
+from ..utils.exceptions import SessionException, UriException
+from ..utils.pin_4_token import Pin4Token, PinTypes
 from .definitions import (
     CK_INFO_translation,
     CK_SESSION_INFO_translation,
