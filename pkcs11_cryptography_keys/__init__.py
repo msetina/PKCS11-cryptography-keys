@@ -24,15 +24,34 @@ from .card_token.PKCS11_key_definition import (
 )
 from .keys import PKCS11PrivateKeyTypes as PKCS11PrivateKeyTypes
 from .keys import PKCS11PublicKeyTypes as PKCS11PublicKeyTypes
+from .keys.AES_crypto import (
+    get_AES_algorithm_properties as get_AES_algorithm_properties,
+)
+from .keys.AES_crypto import (
+    get_AES_key_props_from_algorithm_name as get_AES_key_props_from_algorithm_name,
+)
+from .keys.AES_wrap import (
+    get_wrap_algorithm_properties as get_wrap_algorithm_properties,
+)
 from .keys.eliptic_curve_derive_algorithm import ECDH_KDF as ECDH_KDF
+from .keys.symetric_crypto import SymetricKeyPKCS11 as SymetricKeyPKCS11
 from .sessions.PKCS11_admin_session import (
     PKCS11AdminSession as PKCS11AdminSession,
 )
+from .sessions.PKCS11_encrypt_n_wrap_session import (
+    PKCS11EncryptNWrapSession as PKCS11EncryptNWrapSession,
+)
 from .sessions.PKCS11_key_session import PKCS11KeySession as PKCS11KeySession
+from .sessions.PKCS11_operation_session import (
+    PKCS11OperationSession as PKCS11OperationSession,
+)
 from .sessions.PKCS11_slot_admin_session import (
     PKCS11SlotAdminSession as PKCS11SlotAdminSession,
 )
 from .sessions.PKCS11_slot_session import PKCS11SlotSession as PKCS11SlotSession
+from .sessions.PKCS11_unwrap_n_decrypt import (
+    PKCS11UnwrapNDecryptSession as PKCS11UnwrapNDecryptSession,
+)
 from .sessions.PKCS11_uri_admin_session import (
     PKCS11URIAdminSession as PKCS11URIAdminSession,
 )
@@ -51,6 +70,7 @@ from .utils.certificate_properties import (
 from .utils.certificate_properties import (
     X509ExtendedKeyUsage as X509ExtendedKeyUsage,
 )
+from .utils.ECDH_ephemeral import ECDH_ephemeral as ECDH_ephemeral
 from .utils.exceptions import TokenException as TokenException
 from .utils.init_token import create_token as create_token
 from .utils.init_token import (
