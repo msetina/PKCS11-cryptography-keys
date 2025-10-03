@@ -1,75 +1,17 @@
-from typing import Dict
-
 import PyKCS11
 from cryptography import x509
-from cryptography.exceptions import UnsupportedAlgorithm
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 
-from ..card_token.PKCS11_key_definition import read_key_usage_from_key
+from .PKCS11_object import PKCS11Object
 
 
 # Token representation
-class PKCS11Token:
+class PKCS11Token(PKCS11Object):
     def __init__(self, session, keyid: bytes, pk_ref):
-        # session for interacton with the card
-        self._session = session
+        super().__init__(session, pk_ref)
         # id of key read from private key
         self._keyid = keyid
-        # private key reference
-        self._private_key = pk_ref
-        # operations supported by the card
-        # they are separated in method groups (DIGEST,VERIFY,SIGN,ENCRYPT,DECRYPT)
-        self._operations: Dict[str, Dict] = {}
-
-    # API to init card allowed operations
-    def _get_mechanism_translation(self, method, PKCS11_mechanism):
-        raise NotImplementedError("Just a stub!")
-
-    def read_key_usage(self):
-        return read_key_usage_from_key(self._session, self._private_key)
-
-    # At the init time the call to fill_operations will translate method
-    # and mechanism to parameters form cryptography API calls
-    def fill_operations(self, PKCS11_mechanism, method: str) -> None:
-        mm = None
-        try:
-            if method in [
-                "DIGEST",
-                "SIGN",
-                "VERIFY",
-                "ENCRYPT",
-                "DECRYPT",
-                "DERIVE",
-            ]:
-                mm = self._get_mechanism_translation(method, PKCS11_mechanism)
-        except Exception as e:
-            pass
-        if mm:
-            l = len(mm)
-            if method not in self._operations:
-                self._operations[method] = {}
-            p = self._operations[method]
-            for idx, k in enumerate(mm, start=1):
-                if idx == l:
-                    p[k] = PyKCS11.CKM[PKCS11_mechanism]
-                else:
-                    if k in p:
-                        p = p[k]
-                    else:
-                        p[k] = {}
-                        p = p[k]
-
-    # sign data on the card using provided PK_me which is cards mechanism transalted from cryptography call
-    def _sign(self, data: bytes, PK_me):
-        if self._session is not None and self._private_key is not None:
-            if PK_me is None:
-                raise UnsupportedAlgorithm("Signing algorithm not supported.")
-            else:
-                sig = self._session.sign(self._private_key, data, PK_me)
-            return sig
-        else:
-            return None
 
     # extension to cryptography API to allow simple access to certificates written on the cards
 
@@ -91,7 +33,7 @@ class PKCS11Token:
                     attributes = self._session.getAttributeValue(
                         pk11object, all_attributes
                     )
-                except PyKCS11.PyKCS11Error as e:
+                except PyKCS11.PyKCS11Error:
                     continue
 
                 attr_dict = dict(list(zip(all_attributes, attributes)))
@@ -119,7 +61,7 @@ class PKCS11Token:
                     attributes = self._session.getAttributeValue(
                         pk11object, [PyKCS11.CKA_VALUE]
                     )
-                except PyKCS11.PyKCS11Error as e:
+                except PyKCS11.PyKCS11Error:
                     continue
 
                 cert = bytes(attributes[0])
