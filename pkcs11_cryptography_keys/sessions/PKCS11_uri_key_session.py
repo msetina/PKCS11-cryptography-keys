@@ -54,8 +54,8 @@ class PKCS11URIKeySession(PKCS11Session):
                     keyid,
                     pk_ref,
                 )
-                for m, op in pkcs11_uri.gen_operations():
-                    private_key.fill_operations(m, op)
+                for m, op, properties in pkcs11_uri.gen_operations():
+                    private_key.fill_operations(m, op, properties)
         else:
             self._logger.info("PKCS11 session is not present")
         return private_key

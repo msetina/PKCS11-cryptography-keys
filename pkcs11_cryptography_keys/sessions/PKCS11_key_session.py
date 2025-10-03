@@ -139,10 +139,16 @@ class PKCS11KeySession(PKCS11Session):
                     mechanisms = library.getMechanismList(slot)
                     for m in mechanisms:
                         mi = library.getMechanismInfo(slot, m)
+                        properties = {}
+                        for property, value in mi.to_dict().items():
+                            if isinstance(value, str):
+                                properties[property] = value.strip()
+                            else:
+                                properties[property] = value
                         for mf in mi.flags_dict:
                             if mi.flags & mf != 0:
                                 op = mi.flags_dict[mf].replace("CKF_", "")
-                                private_key.fill_operations(m, op)
+                                private_key.fill_operations(m, op, properties)
             else:
                 self._logger.info("PKCS11 session could not be opened")
         else:
