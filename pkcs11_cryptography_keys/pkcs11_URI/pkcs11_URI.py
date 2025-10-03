@@ -20,7 +20,6 @@ from PyKCS11 import (
 from ..utils.exceptions import SessionException, UriException
 from ..utils.pin_4_token import Pin4Token, PinTypes
 from .definitions import (
-    CK_INFO_translation,
     CK_SESSION_INFO_translation,
     ParameterMatch,
     PKCS11_type_translation,
@@ -44,7 +43,7 @@ class PKCS11URI(object):
         }
         self._location: dict[str, str] = location
         self._query: dict[str, str] = query
-        self._operations: list[tuple[int, str]] = []
+        self._operations: list[tuple[int, str, dict]] = []
         self._logger = logger if logger is not None else getLogger("PKCS11 uri")
 
     def __get_object_value(self, value: str):
@@ -250,10 +249,16 @@ class PKCS11URI(object):
                     self._operations = []
                     for m in mechanisms:
                         mi = library.getMechanismInfo(slot, m)
+                        properties = {}
+                        for property, value in mi.to_dict().items():
+                            if isinstance(value, str):
+                                properties[property] = value.strip()
+                            else:
+                                properties[property] = value
                         for mf in mi.flags_dict:
                             if mi.flags & mf != 0:
                                 op = mi.flags_dict[mf].replace("CKF_", "")
-                                self._operations.append((m, op))
+                                self._operations.append((m, op, properties))
             else:
                 self._logger.info("Session could not be opened.")
         else:
@@ -261,8 +266,8 @@ class PKCS11URI(object):
         return session, tp
 
     def gen_operations(self):
-        for m, op in self._operations:
-            yield m, op
+        for m, op, properties in self._operations:
+            yield m, op, properties
 
     def get_key(self, session: Session) -> tuple[bytes | None, int | None, Any]:
         template = []
