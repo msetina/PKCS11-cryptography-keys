@@ -145,9 +145,17 @@ class TokenProperties(object):
         return self._properties[TokenPINProperties.ulMinPinLen.value]
 
     def check_pin_length(self, pin: str):
-        l = len(pin)
+        pin_len = len(pin)
         ret = False
-        if l >= self.get_min_pin_length() and l < self.get_max_pin_length():
+        if (
+            self.get_min_pin_length() == self.get_max_pin_length()
+            and self.get_min_pin_length() == 0
+        ):
+            ret = True
+        elif (
+            pin_len >= self.get_min_pin_length()
+            and pin_len < self.get_max_pin_length()
+        ):
             ret = True
         return ret
 
