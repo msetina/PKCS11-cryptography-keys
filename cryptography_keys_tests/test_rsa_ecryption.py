@@ -56,6 +56,7 @@ class TestRSAEncryption:
             list_token_labels,
         )
 
+        # SoftHSM2 supports only SHA1
         message = b"encrypted data"
         for label in list_token_labels(_pkcs11lib):
             a_session = PKCS11AdminSession(
