@@ -33,7 +33,7 @@ dependencies = [
     "cryptography>=44.0.0",
     "asn1crypto>=1.5.1"
 ]
-version = "0.0.6"
+version = "0.0.7"
 
 [project.readme]
 file = "README.rst"
