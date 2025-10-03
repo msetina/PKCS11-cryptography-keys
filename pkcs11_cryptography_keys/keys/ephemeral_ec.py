@@ -3,24 +3,20 @@
 # for complete details.
 
 import binascii
-from typing import Dict
 
 import PyKCS11
-from asn1crypto.core import BitString, ObjectIdentifier, OctetString
+from asn1crypto.core import BitString, OctetString
+from asn1crypto.keys import ECDomainParameters, NamedCurve
 from cryptography.exceptions import InvalidSignature, UnsupportedAlgorithm
-from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric.ec import (
     ECDH,
     EllipticCurve,
-    EllipticCurvePrivateKey,
     EllipticCurvePrivateNumbers,
     EllipticCurvePublicKey,
     EllipticCurvePublicNumbers,
     EllipticCurveSignatureAlgorithm,
-    get_curve_for_oid,
 )
 from cryptography.hazmat.primitives.asymmetric.utils import (
-    Prehashed,
     decode_dss_signature,
     encode_dss_signature,
 )
@@ -30,13 +26,20 @@ from cryptography.hazmat.primitives.serialization import (
     PrivateFormat,
     PublicFormat,
 )
-from cryptography.x509 import ObjectIdentifier as cryptoObjectIdentifier
 
-from ..card_token.PKCS11_token import PKCS11Token
+from ..card_token.PKCS11_key_definition import PKCS11KeyUsage
+from ..card_token.PKCS11_object import PKCS11Object
 from ..utils.exceptions import KeyException, SessionException
 from .AES_wrap import PKCS11AESWrap, get_key_wrappers_translation
+from .ec import (
+    _decode_RS_signature,
+    _digest_algorithm_implementations,
+    _encode_RS_signature,
+    _get_curve_class,
+    _get_PKSC11_mechanism,
+    _get_PKSC11_mechanism_D,
+)
 from .eliptic_curve_derive_algorithm import (
-    ECDH_KDF,
     ECDH_noKDF,
     EllipticCurveKDFAlgorithm,
 )
@@ -46,54 +49,6 @@ from .symetric_crypto import (
     get_symetric_key_translation,
 )
 
-# Translation from mechanism read from the card to parameters needed for cryptography API
-# At init time this is used to for operations list for later use in function calls as card limitations
-_digest_algorithm_implementations: Dict[str, Dict] = {
-    PyKCS11.CKM_SHA_1: {"DIGEST": {"hash": hashes.SHA1}},
-    PyKCS11.CKM_SHA224: {"DIGEST": {"hash": hashes.SHA224}},
-    PyKCS11.CKM_SHA384: {"DIGEST": {"hash": hashes.SHA384}},
-    PyKCS11.CKM_SHA256: {"DIGEST": {"hash": hashes.SHA256}},
-    PyKCS11.CKM_SHA512: {"DIGEST": {"hash": hashes.SHA512}},
-    PyKCS11.CKM_ECDSA: {
-        "SIGN": {"hash": Prehashed},
-        "VERIFY": {"hash": Prehashed},
-    },
-    PyKCS11.CKM_ECDSA_SHA1: {
-        "SIGN": {"hash": hashes.SHA1},
-        "VERIFY": {"hash": hashes.SHA1},
-    },
-    PyKCS11.CKM_ECDSA_SHA224: {
-        "SIGN": {"hash": hashes.SHA224},
-        "VERIFY": {"hash": hashes.SHA1},
-    },
-    PyKCS11.CKM_ECDSA_SHA256: {
-        "SIGN": {"hash": hashes.SHA256},
-        "VERIFY": {"hash": hashes.SHA1},
-    },
-    PyKCS11.CKM_ECDSA_SHA384: {
-        "SIGN": {"hash": hashes.SHA384},
-        "VERIFY": {"hash": hashes.SHA1},
-    },
-    PyKCS11.CKM_ECDSA_SHA512: {
-        "SIGN": {"hash": hashes.SHA512},
-        "VERIFY": {"hash": hashes.SHA1},
-    },
-    # PyKCS11.CKM_ECDH1_COFACTOR_DERIVE: EllipticCurveKDFAlgorithm(),
-    PyKCS11.CKM_ECDH1_DERIVE: {"DERIVE": {"hash": EllipticCurveKDFAlgorithm}},
-}
-
-_kdf_translation = {
-    hashes.SHA1: PyKCS11.CKD_SHA1_KDF,
-    hashes.SHA224: PyKCS11.CKD_SHA224_KDF,
-    hashes.SHA256: PyKCS11.CKD_SHA256_KDF,
-    hashes.SHA384: PyKCS11.CKD_SHA384_KDF,
-    hashes.SHA512: PyKCS11.CKD_SHA512_KDF,
-    hashes.SHA3_224: PyKCS11.CKD_SHA3_224_KDF,
-    hashes.SHA3_256: PyKCS11.CKD_SHA3_256_KDF,
-    hashes.SHA3_384: PyKCS11.CKD_SHA3_384_KDF,
-    hashes.SHA3_512: PyKCS11.CKD_SHA3_512_KDF,
-}
-
 
 def get_mechanism_definition(mechanism_name: str):
     mech = PyKCS11.CKM[mechanism_name]
@@ -101,118 +56,7 @@ def get_mechanism_definition(mechanism_name: str):
         return _digest_algorithm_implementations[mech]
 
 
-# Get curve class from EC_PARAMS
-def _get_curve_class(data: bytes):
-    oid = ObjectIdentifier.load(data)
-    coi = cryptoObjectIdentifier(oid.dotted)
-    return get_curve_for_oid(coi)
-
-
-# Get PKCS11 mechanism from hashing algorithm for sign/verify
-def _get_PKSC11_mechanism(operation_dict, algorithm):
-    PK_me = None
-    cls = algorithm.algorithm.__class__
-    if cls in operation_dict:
-        mech = operation_dict[cls]
-        PK_me = PyKCS11.Mechanism(mech)
-    return PK_me
-
-
-def _get_PKSC11_mechanism_D(
-    operation_dict: dict,
-    algorithm: EllipticCurveKDFAlgorithm,
-    publicData,
-):
-    PK_me = None
-    template = None
-    if EllipticCurveKDFAlgorithm in operation_dict:
-        cls = algorithm.__class__
-        if cls == ECDH_noKDF:
-            # :param publicData: Other party public key which is EC Point [PC || coord-x || coord-y]. 04 || x || y
-            # :param kdf: Key derivation function. OPTIONAL. Defaults to CKD_NULL
-            # :param sharedData: additional shared data. OPTIONAL
-            PK_me = PyKCS11.ECDH1_DERIVE_Mechanism(
-                publicData, kdf=PyKCS11.CKD_NULL
-            )
-            keyID = (0x22,)
-            template = [
-                (PyKCS11.CKA_CLASS, PyKCS11.CKO_SECRET_KEY),
-                (PyKCS11.CKA_KEY_TYPE, PyKCS11.CKK_GENERIC_SECRET),
-                (PyKCS11.CKA_TOKEN, PyKCS11.CK_FALSE),
-                (PyKCS11.CKA_SENSITIVE, PyKCS11.CK_FALSE),
-                (PyKCS11.CKA_PRIVATE, PyKCS11.CK_TRUE),
-                (PyKCS11.CKA_UNWRAP, PyKCS11.CK_TRUE),
-                (PyKCS11.CKA_DECRYPT, PyKCS11.CK_TRUE),
-                (PyKCS11.CKA_SIGN, PyKCS11.CK_FALSE),
-                (PyKCS11.CKA_EXTRACTABLE, PyKCS11.CK_TRUE),
-                (PyKCS11.CKA_VERIFY, PyKCS11.CK_FALSE),
-                (PyKCS11.CKA_LABEL, "derivedECDHSecret"),
-                (PyKCS11.CKA_ID, keyID),
-            ]
-        elif cls == ECDH_KDF:
-            hash_algo = algorithm.hash_algorithm
-            if hash_algo is not None and type(hash_algo) in _kdf_translation:
-                kdf = _kdf_translation[type(hash_algo)]
-                sharedData = algorithm.other_info
-                PK_me = PyKCS11.ECDH1_DERIVE_Mechanism(
-                    publicData, kdf=kdf, sharedData=sharedData
-                )
-                key_length = algorithm.key_length
-                keyID = (0x22,)
-                template = [
-                    (PyKCS11.CKA_CLASS, PyKCS11.CKO_SECRET_KEY),
-                    (PyKCS11.CKA_KEY_TYPE, PyKCS11.CKK_AES),
-                    (PyKCS11.CKA_VALUE_LEN, key_length),
-                    (PyKCS11.CKA_TOKEN, PyKCS11.CK_FALSE),
-                    (PyKCS11.CKA_SENSITIVE, PyKCS11.CK_TRUE),
-                    (PyKCS11.CKA_PRIVATE, PyKCS11.CK_TRUE),
-                    (PyKCS11.CKA_UNWRAP, PyKCS11.CK_TRUE),
-                    (PyKCS11.CKA_WRAP, PyKCS11.CK_TRUE),
-                    (PyKCS11.CKA_ENCRYPT, PyKCS11.CK_TRUE),
-                    (PyKCS11.CKA_DECRYPT, PyKCS11.CK_TRUE),
-                    (PyKCS11.CKA_SIGN, PyKCS11.CK_FALSE),
-                    (PyKCS11.CKA_EXTRACTABLE, PyKCS11.CK_TRUE),
-                    (PyKCS11.CKA_VERIFY, PyKCS11.CK_FALSE),
-                    (PyKCS11.CKA_LABEL, "derivedECDHKey"),
-                    (PyKCS11.CKA_ID, keyID),
-                ]
-
-            else:
-                raise UnsupportedAlgorithm(
-                    "KDF algorithm for hash {0} not supported.".format(
-                        hash_algo
-                    )
-                )
-
-    return PK_me, template
-
-
-# ECDSA signtures come from the card RS encoded, for transformation we need separate r and s
-def _decode_RS_signature(data) -> tuple:
-    ll = len(data) / 2
-    r = bytearray()
-    s = bytearray()
-    for i in range(len(data)):
-        if i < ll:
-            r.append(data[i])
-        else:
-            s.append(data[i])
-    return r, s
-
-
-def _encode_RS_signature(r_s: tuple, key_size: int) -> bytes | None:
-    ll = int(key_size / 8)
-    signature = None
-    try:
-        signature = int(r_s[0]).to_bytes(ll, "big") + int(r_s[1]).to_bytes(
-            ll, "big"
-        )
-    except Exception:
-        pass
-    return signature
-
-
-class EllipticCurvePublicKeyPKCS11:
+class EphemeralEllipticCurvePublicKeyPKCS11:
     def __init__(self, session, public_key, operations: dict):
         self._session = session
         self._public_key = public_key
@@ -328,19 +172,62 @@ class EllipticCurvePublicKeyPKCS11:
             raise SessionException("Session to card missing")
 
     def __eq__(self, other: object) -> bool:
-        if isinstance(other, EllipticCurvePublicKeyPKCS11):
+        if isinstance(other, EphemeralEllipticCurvePublicKeyPKCS11):
             return self._public_key == other._public_key
         else:
             return False
 
 
-EllipticCurvePublicKeyWithSerialization = EllipticCurvePublicKeyPKCS11
-EllipticCurvePublicKey.register(EllipticCurvePublicKeyPKCS11)
+class EphemeralEllipticCurvePrivateKeyPKCS11(PKCS11Object):
+    def __init__(self, session, pk_ref, pub_key_ref):
+        super().__init__(session, pk_ref)
+        self._public_key = pub_key_ref
 
+    @classmethod
+    def generate_ephemeral_keypair(
+        cls,
+        session,
+        intended_usage: PKCS11KeyUsage,
+        curve,
+        mechanism_generator,
+        logger,
+    ):
+        domain_params = ECDomainParameters(
+            name="named", value=NamedCurve(curve.name)
+        )
+        ec_params = domain_params.dump()
+        public_key_template = [
+            (PyKCS11.CKA_CLASS, PyKCS11.CKO_PUBLIC_KEY),
+            (PyKCS11.CKA_KEY_TYPE, PyKCS11.CKK_ECDSA),
+            (PyKCS11.CKA_PRIVATE, PyKCS11.CK_FALSE),
+            (PyKCS11.CKA_TOKEN, PyKCS11.CK_FALSE),  # Ephemeral Public Key
+            (PyKCS11.CKA_VERIFY, PyKCS11.CK_TRUE),
+            (PyKCS11.CKA_EC_PARAMS, ec_params),
+        ]
 
-class EllipticCurvePrivateKeyPKCS11(PKCS11Token):
-    def __init__(self, session, keyid, pk_ref):
-        super().__init__(session, keyid, pk_ref)
+        private_key_template = [
+            (PyKCS11.CKA_CLASS, PyKCS11.CKO_PRIVATE_KEY),
+            (PyKCS11.CKA_KEY_TYPE, PyKCS11.CKK_ECDSA),
+            (PyKCS11.CKA_PRIVATE, PyKCS11.CK_TRUE),
+            (PyKCS11.CKA_TOKEN, PyKCS11.CK_FALSE),  # Ephemeral Private Key
+            (PyKCS11.CKA_SIGN, PyKCS11.CK_TRUE),
+            (PyKCS11.CKA_DERIVE, PyKCS11.CK_TRUE),  # Needed for ECDH
+            (PyKCS11.CKA_SENSITIVE, PyKCS11.CK_FALSE),
+            (PyKCS11.CKA_EXTRACTABLE, PyKCS11.CK_TRUE),
+        ]
+
+        logger.info("Generating ephemeral EC key pair...")
+
+        # Generate the key pair
+        public_key_handle, private_key_handle = session.generateKeyPair(
+            public_key_template,
+            private_key_template,
+            mecha=PyKCS11.MechanismECGENERATEKEYPAIR,
+        )
+        em_pk = cls(session, private_key_handle, public_key_handle)
+        for PKCS11_mechanism, method, properties in mechanism_generator():
+            em_pk.fill_operations(PKCS11_mechanism, method, properties)
+        return em_pk
 
     # Register mechanism to operation as card capability
     def _get_mechanism_translation(self, method, PKCS11_mechanism, properties):
@@ -471,23 +358,11 @@ class EllipticCurvePrivateKeyPKCS11(PKCS11Token):
                 "Derived key can not be used. Key object type not found."
             )
 
-    def public_key(self) -> EllipticCurvePublicKeyPKCS11:
+    def public_key(self) -> EphemeralEllipticCurvePublicKeyPKCS11:
         if self._session is not None:
-            pubkey_o = self._session.findObjects(
-                [
-                    (PyKCS11.CKA_CLASS, PyKCS11.CKO_PUBLIC_KEY),
-                    (PyKCS11.CKA_ID, self._keyid),
-                ]
+            return EphemeralEllipticCurvePublicKeyPKCS11(
+                self._session, self._public_key, self._operations
             )
-            if len(pubkey_o) > 0:
-                pubkey = pubkey_o[0]
-                return EllipticCurvePublicKeyPKCS11(
-                    self._session, pubkey, self._operations
-                )
-            else:
-                raise KeyException(
-                    "Public key with id {0!r} not found".format(self._keyid)
-                )
         else:
             raise SessionException("Session to card missing")
 
@@ -556,9 +431,5 @@ class EllipticCurvePrivateKeyPKCS11(PKCS11Token):
         raise NotImplementedError("Cards should not export private key")
 
 
-EllipticCurvePrivateKeyWithSerialization = EllipticCurvePrivateKeyPKCS11
-EllipticCurvePrivateKey.register(EllipticCurvePrivateKeyPKCS11)
-
-
-def get_key(session, keyid, pk_ref) -> EllipticCurvePrivateKeyPKCS11:
-    return EllipticCurvePrivateKeyPKCS11(session, keyid, pk_ref)
+def get_key(session, keyid, pk_ref) -> EphemeralEllipticCurvePrivateKeyPKCS11:
+    return EphemeralEllipticCurvePrivateKeyPKCS11(session, keyid, pk_ref)

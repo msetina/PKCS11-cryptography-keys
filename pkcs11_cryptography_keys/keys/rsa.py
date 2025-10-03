@@ -23,8 +23,15 @@ from cryptography.hazmat.primitives.asymmetric.rsa import (
     RSAPublicNumbers,
 )
 
+from ..card_token.PKCS11_key_definition import PKCS11KeyUsage
+from ..card_token.PKCS11_object import add_to_operations
 from ..card_token.PKCS11_token import PKCS11Token
+from ..keys.symetric_crypto import (
+    SymetricAlgorithmProperties,
+    get_symetric_key_translation,
+)
 from ..utils.exceptions import KeyException, SessionException, TokenException
+from .AES_wrap import get_key_wrappers_translation
 
 _hash_translation = {
     hashes.SHA1: PyKCS11.CKM_SHA_1,
@@ -47,36 +54,48 @@ _digest_algorithm_implementations: Dict[str, Dict] = {
         "VERIFY": {"hash": asym_utils.Prehashed, "pad": PKCS1v15},
         "ENCRYPT": {"hash": asym_utils.Prehashed, "pad": PKCS1v15},
         "DECRYPT": {"hash": asym_utils.Prehashed, "pad": PKCS1v15},
+        "UNWRAP": {"hash": asym_utils.Prehashed, "pad": PKCS1v15},
+        "WRAP": {"hash": asym_utils.Prehashed, "pad": PKCS1v15},
     },
     PyKCS11.CKM_SHA224_RSA_PKCS: {
         "SIGN": {"hash": hashes.SHA224, "pad": PKCS1v15},
         "VERIFY": {"hash": hashes.SHA224, "pad": PKCS1v15},
         "ENCRYPT": {"hash": hashes.SHA224, "pad": PKCS1v15},
         "DECRYPT": {"hash": hashes.SHA224, "pad": PKCS1v15},
+        "UNWRAP": {"hash": hashes.SHA224, "pad": PKCS1v15},
+        "WRAP": {"hash": hashes.SHA224, "pad": PKCS1v15},
     },
     PyKCS11.CKM_SHA256_RSA_PKCS: {
         "SIGN": {"hash": hashes.SHA256, "pad": PKCS1v15},
         "VERIFY": {"hash": hashes.SHA256, "pad": PKCS1v15},
         "ENCRYPT": {"hash": hashes.SHA256, "pad": PKCS1v15},
         "DECRYPT": {"hash": hashes.SHA256, "pad": PKCS1v15},
+        "UNWRAP": {"hash": hashes.SHA256, "pad": PKCS1v15},
+        "WRAP": {"hash": hashes.SHA256, "pad": PKCS1v15},
     },
     PyKCS11.CKM_SHA384_RSA_PKCS: {
         "SIGN": {"hash": hashes.SHA384, "pad": PKCS1v15},
         "VERIFY": {"hash": hashes.SHA384, "pad": PKCS1v15},
         "ENCRYPT": {"hash": hashes.SHA384, "pad": PKCS1v15},
         "DECRYPT": {"hash": hashes.SHA384, "pad": PKCS1v15},
+        "UNWRAP": {"hash": hashes.SHA384, "pad": PKCS1v15},
+        "WRAP": {"hash": hashes.SHA384, "pad": PKCS1v15},
     },
     PyKCS11.CKM_SHA512_RSA_PKCS: {
         "SIGN": {"hash": hashes.SHA512, "pad": PKCS1v15},
         "VERIFY": {"hash": hashes.SHA512, "pad": PKCS1v15},
         "ENCRYPT": {"hash": hashes.SHA512, "pad": PKCS1v15},
         "DECRYPT": {"hash": hashes.SHA512, "pad": PKCS1v15},
+        "UNWRAP": {"hash": hashes.SHA512, "pad": PKCS1v15},
+        "WRAP": {"hash": hashes.SHA512, "pad": PKCS1v15},
     },
     PyKCS11.CKM_SHA1_RSA_PKCS: {
         "SIGN": {"hash": hashes.SHA1, "pad": PKCS1v15},
         "VERIFY": {"hash": hashes.SHA1, "pad": PKCS1v15},
         "ENCRYPT": {"hash": hashes.SHA1, "pad": PKCS1v15},
         "DECRYPT": {"hash": hashes.SHA1, "pad": PKCS1v15},
+        "UNWRAP": {"hash": hashes.SHA1, "pad": PKCS1v15},
+        "WRAP": {"hash": hashes.SHA1, "pad": PKCS1v15},
     },
     PyKCS11.CKM_RSA_PKCS_PSS: {
         "SIGN": {"hash": asym_utils.Prehashed, "pad": PSS},
@@ -119,6 +138,8 @@ _digest_algorithm_implementations: Dict[str, Dict] = {
         "VERIFY": {"hash": asym_utils.Prehashed, "pad": OAEP},
         "ENCRYPT": {"hash": asym_utils.Prehashed, "pad": OAEP},
         "DECRYPT": {"hash": asym_utils.Prehashed, "pad": OAEP},
+        "UNWRAP": {"hash": asym_utils.Prehashed, "pad": OAEP},
+        "WRAP": {"hash": asym_utils.Prehashed, "pad": OAEP},
     },
 }
 
@@ -192,13 +213,13 @@ def _get_PKSC11_mechanism_ED(operation_dict, padding, digest_dict, key):
             PK_me = PyKCS11.MechanismRSAPKCS1
         if pcls == PSS:
             mc = padding.mgf._algorithm.__class__
-            padding.mgf
             mgf = mgf_methods[mc]
             hash = digest_dict[mc]
             mech = operation_dict[pcls]
             salt = _get_salt_length_int(key, mc, padding)
             PK_me = PyKCS11.RSA_PSS_Mechanism(mech, hash, mgf, salt)
         if pcls == OAEP:
+            mgf = padding.mgf.__class__
             mc = padding.mgf._algorithm.__class__
             hc = padding.algorithm.__class__
             hash = digest_dict[hc]
@@ -207,11 +228,143 @@ def _get_PKSC11_mechanism_ED(operation_dict, padding, digest_dict, key):
     return PK_me
 
 
+def _get_PKSC11_mechanism_U(operation_dict, padding, digest_dict):
+    PK_me = None
+    key_template = [
+        (PyKCS11.CKA_CLASS, PyKCS11.CKO_SECRET_KEY),
+        (PyKCS11.CKA_KEY_TYPE, PyKCS11.CKK_AES),
+        (PyKCS11.CKA_DECRYPT, PyKCS11.CK_TRUE),
+        (PyKCS11.CKA_ENCRYPT, PyKCS11.CK_TRUE),
+        (PyKCS11.CKA_TOKEN, PyKCS11.CK_FALSE),
+        (PyKCS11.CKA_SENSITIVE, PyKCS11.CK_TRUE),
+        (PyKCS11.CKA_EXTRACTABLE, PyKCS11.CK_FALSE),
+    ]
+    pcls = padding.__class__
+    if pcls in operation_dict:
+        if pcls == PKCS1v15:
+            PK_me = PyKCS11.MechanismRSAPKCS1
+        if pcls == OAEP:
+            mgf = padding.mgf.__class__
+            mc = padding.mgf._algorithm.__class__
+            hc = padding.algorithm.__class__
+            hash = digest_dict[hc]
+            mgf = mgf_methods[mc]
+            PK_me = PyKCS11.RSAOAEPMechanism(hash, mgf)
+    return PK_me, key_template
+
+
+def _get_PKSC11_mechanism_W(operation_dict, padding, digest_dict):
+    PK_me = None
+    pcls = padding.__class__
+    if pcls in operation_dict:
+        if pcls == PKCS1v15:
+            PK_me = PyKCS11.MechanismRSAPKCS1
+        if pcls == OAEP:
+            mgf = padding.mgf.__class__
+            mc = padding.mgf._algorithm.__class__
+            hc = padding.algorithm.__class__
+            hash = digest_dict[hc]
+            mgf = mgf_methods[mc]
+            PK_me = PyKCS11.RSAOAEPMechanism(hash, mgf)
+    return PK_me
+
+
+def _get_mechanism_translation(method, PKCS11_mechanism, properties):
+    mm = PyKCS11.CKM[PKCS11_mechanism]
+    if (
+        mm in _digest_algorithm_implementations
+        and method in _digest_algorithm_implementations[mm]
+    ):
+        definition = _digest_algorithm_implementations[mm][method]
+        if method in [
+            "SIGN",
+            "VERIFY",
+        ]:
+            return [definition["hash"], definition["pad"]]
+        elif method in ["ENCRYPT", "DECRYPT", "WRAP", "UNWRAP"]:
+            return [definition["pad"]]
+        elif method in ["DIGEST"]:
+            return [definition["hash"]]
+        else:
+            return []
+
+
 class RSAPublicKeyPKCS11:
     def __init__(self, session, public_key, operations: dict):
         self._session = session
         self._public_key = public_key
         self._operations = operations
+
+    @classmethod
+    def import_session_RSA_public_key(
+        cls,
+        session,
+        receiver_pub_key: RSAPublicKey,
+        intended_usage: PKCS11KeyUsage,
+        mechanism_generator,
+    ):
+        # Get modulus and public exponent from the cryptography object
+        modulus = receiver_pub_key.public_numbers().n.to_bytes(
+            (receiver_pub_key.public_numbers().n.bit_length() + 7) // 8,
+            byteorder="big",
+        )
+        public_exponent = receiver_pub_key.public_numbers().e.to_bytes(
+            (receiver_pub_key.public_numbers().e.bit_length() + 7) // 8,
+            byteorder="big",
+        )
+
+        # Step 1: Import the RSA public key as a session object
+        rsa_template = [
+            (PyKCS11.CKA_CLASS, PyKCS11.CKO_PUBLIC_KEY),
+            (PyKCS11.CKA_KEY_TYPE, PyKCS11.CKK_RSA),
+            (PyKCS11.CKA_TOKEN, PyKCS11.CK_FALSE),  # Session object
+            (PyKCS11.CKA_MODULUS, modulus),
+            (PyKCS11.CKA_PUBLIC_EXPONENT, public_exponent),
+            # TODO: this needs to be parameter
+            (PyKCS11.CKA_WRAP, PyKCS11.CK_TRUE),  # Must be True for wrapping
+            (PyKCS11.CKA_ENCRYPT, PyKCS11.CK_TRUE),
+        ]
+        pub_key = session.createObject(rsa_template)
+        operations: Dict[str, Dict] = {}
+        for PKCS11_mechanism, method, properties in mechanism_generator():
+            oo = _get_mechanism_translation(
+                method, PKCS11_mechanism, properties
+            )
+            if oo is not None:
+                add_to_operations(operations, method, PKCS11_mechanism, oo)
+        return RSAPublicKeyPKCS11(session, pub_key, operations)
+
+    def can_encrypt(self, padding: AsymmetricPadding) -> bool:
+        if "ENCRYPT" in self._operations:
+            if "DIGEST" in self._operations:
+                PK_me = _get_PKSC11_mechanism_ED(
+                    self._operations["ENCRYPT"],
+                    padding,
+                    self._operations["DIGEST"],
+                    self,
+                )
+                if PK_me is not None:
+                    return True
+                else:
+                    return False
+            else:
+                return False
+        else:
+            return False
+
+    def can_wrap(self, padding: AsymmetricPadding) -> bool:
+        if "WRAP" in self._operations and "DIGEST" in self._operations:
+            PK_me = _get_PKSC11_mechanism_W(
+                self._operations["WRAP"],
+                padding,
+                self._operations["DIGEST"],
+            )
+            if PK_me is not None:
+                return True
+            else:
+                return False
+        else:
+            return False
 
     # cryptography API
     def encrypt(self, plaintext: bytes, padding: AsymmetricPadding) -> bytes:
@@ -289,7 +442,7 @@ class RSAPublicKeyPKCS11:
         padding: AsymmetricPadding,
         algorithm: asym_utils.Prehashed | hashes.HashAlgorithm,
     ) -> None:
-        if self._session != None:
+        if self._session is not None:
             if "VERIFY" in self._operations:
                 ht = {}
                 if "DIGEST" in self._operations:
@@ -337,6 +490,35 @@ class RSAPublicKeyPKCS11:
         else:
             return False
 
+    def wrap(
+        self,
+        key: int,
+        padding: AsymmetricPadding,
+    ):
+        if "WRAP" in self._operations and "DIGEST" in self._operations:
+            # prepare mechanism to unwrap
+            # unwrap_mechanism  from padding
+            wrap_mechanism = _get_PKSC11_mechanism_W(
+                self._operations["WRAP"],
+                padding,
+                self._operations["DIGEST"],
+            )
+            if wrap_mechanism is not None:
+
+                # unwrap with this key
+                wrapped_key = self._session.wrapKey(
+                    self._public_key, key, mecha=wrap_mechanism
+                )
+            else:
+                raise UnsupportedAlgorithm(
+                    "Wrap padding {0} not supported on the card".format(
+                        padding.name
+                    )
+                )
+        else:
+            raise UnsupportedAlgorithm("Wrap not supported on the card")
+        return wrapped_key
+
 
 RSAPublicKeyWithSerialization = RSAPublicKeyPKCS11
 RSAPublicKey.register(RSAPublicKeyPKCS11)
@@ -347,29 +529,24 @@ class RSAPrivateKeyPKCS11(PKCS11Token):
         super().__init__(session, keyid, pk_ref)
 
     # Register mechanism to operation as card capability
-    def _get_mechanism_translation(self, method, PKCS11_mechanism):
-        mm = PyKCS11.CKM[PKCS11_mechanism]
-        if (
-            mm in _digest_algorithm_implementations
-            and method in _digest_algorithm_implementations[mm]
-        ):
-            definition = _digest_algorithm_implementations[mm][method]
-            if method in [
-                "SIGN",
-                "VERIFY",
-            ]:
-                return [definition["hash"], definition["pad"]]
-            elif method in [
-                "ENCRYPT",
-                "DECRYPT",
-            ]:
-                return [definition["pad"]]
-            elif method in ["DIGEST"]:
-                return [definition["hash"]]
-            else:
-                return []
-        else:
-            raise SessionException("Session to card missing")
+    def _get_mechanism_translation(self, method, PKCS11_mechanism, properties):
+        return _get_mechanism_translation(method, PKCS11_mechanism, properties)
+
+    # Register symetric key support
+    def _get_symetric_key_translation(
+        self, method, PKCS11_mechanism, properties
+    ):
+        return get_symetric_key_translation(
+            method, PKCS11_mechanism, properties
+        )
+
+    # Register key wrap support
+    def _get_key_wrappers_translation(
+        self, method, PKCS11_mechanism, properties
+    ):
+        return get_key_wrappers_translation(
+            method, PKCS11_mechanism, properties
+        )
 
     # cryptography API
     def decrypt(self, ciphertext: bytes, padding: AsymmetricPadding) -> bytes:
@@ -467,6 +644,38 @@ class RSAPrivateKeyPKCS11(PKCS11Token):
                 )
         else:
             raise UnsupportedAlgorithm("Sign not supported by card")
+
+    def unwrap(
+        self,
+        encrypted_key: bytes,
+        padding: AsymmetricPadding,
+        unwrapped_key_props: SymetricAlgorithmProperties,
+    ):
+        if "UNWRAP" in self._operations and "DIGEST" in self._operations:
+            # prepare mechanism to unwrap
+            # unwrap_mechanism  from padding
+            unwrap_mechanism, key_template = _get_PKSC11_mechanism_U(
+                self._operations["UNWRAP"],
+                padding,
+                self._operations["DIGEST"],
+            )
+            if unwrap_mechanism is not None:
+                # unwrap with this key
+                h_cek = self._session.unwrapKey(
+                    self._private_key,
+                    encrypted_key,
+                    key_template,
+                    mecha=unwrap_mechanism,
+                )
+            else:
+                raise UnsupportedAlgorithm(
+                    "Unwrap padding {0} not supported on the card".format(
+                        padding.name
+                    )
+                )
+        else:
+            raise UnsupportedAlgorithm("Unwrap not supported on the card")
+        return h_cek
 
     def private_numbers(self) -> RSAPrivateNumbers:
         raise NotImplementedError("Cards should not export private key")
