@@ -616,7 +616,7 @@ class PKCS11UnwrapNDecryptSession(PKCS11OperationSession):
                 unwrapped_key,
                 unwrapped_key_props,
                 card_decryption,
-                kwargs,
+                **kwargs,
             )
         elif isinstance(unwrapped_key_props, AESAlgorithmPropertiesCBC):
             return_value = self._decrypt_CBC(
@@ -663,7 +663,12 @@ class PKCS11UnwrapNDecryptSession(PKCS11OperationSession):
         return return_value
 
     def _decryptGCM(
-        self, data, unwrapped_key, unwrapped_key_props, card_decryption, kwargs
+        self,
+        data,
+        unwrapped_key,
+        unwrapped_key_props,
+        card_decryption,
+        **kwargs,
     ):
         if "aad_for_gcm" in kwargs:
             aad_for_gcm = kwargs["aad_for_gcm"]
